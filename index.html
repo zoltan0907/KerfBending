@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kerf Bending - Kasten & Rahmen Kalkulator</title>
+    <title>Kerf Bending - Polygon & Rahmen Kalkulator</title>
     <style>
         :root {
-            --primary: #d97706; /* Holz-affines Orange/Braun */
+            --primary: #d97706;
             --primary-hover: #b45309;
             --bg: #f8fafc;
             --card: #ffffff;
@@ -146,22 +146,27 @@
 <div class="container">
     <!-- Linke Spalte: Parameter -->
     <div class="card no-print">
-        <h2>Rahmen Konfigurator</h2>
+        <h2>Polygon Konfigurator</h2>
         
         <div class="form-group">
-            <label>Werkstück-Typ</label>
-            <select id="type">
-                <option value="box">Geschlossener Kasten (4 Ecken)</option>
-                <option value="u-shape">U-Profil / Offener Rahmen (2 Ecken)</option>
+            <label>Anzahl der Ecken / Form</label>
+            <select id="corners">
+                <option value="2">2 Ecken (U-Profil, 90°)</option>
+                <option value="4" selected>4 Ecken (Kasten/Rechteck, 90°)</option>
+                <option value="6">6 Ecken (Sechseck, 60°)</option>
+                <option value="8">8 Ecken (Achteck, 45°)</option>
+                <option value="10">10 Ecken (Zehneck, 36°)</option>
+                <option value="12">12 Ecken (Zwölfeck, 30°)</option>
+                <option value="16">16 Ecken (Sechzehneck, 22.5°)</option>
             </select>
         </div>
 
-        <h3 class="section-title">Außenmaße des fertigen Kastens</h3>
+        <h3 class="section-title">Außenmaße des fertigen Körpers</h3>
         <div class="form-group">
-            <label>Außen-Breite (W) in mm</label>
+            <label id="w-label">Außen-Breite (W) in mm</label>
             <input type="number" id="W" value="300" step="1">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="h-group">
             <label>Außen-Höhe/Schenkel (H) in mm</label>
             <input type="number" id="H" value="200" step="1">
         </div>
@@ -221,25 +226,50 @@
 </div>
 
 <script>
+    // Event Listener für UI-Logik (Dropdown verändert angezeigte Felder)
+    document.getElementById('corners').addEventListener('change', function() {
+        const n = parseInt(this.value);
+        const hGroup = document.getElementById('h-group');
+        const wLabel = document.getElementById('w-label');
+        
+        if (n === 2 || n === 4) {
+            hGroup.style.display = 'block';
+            wLabel.innerText = 'Außen-Breite (W) in mm';
+        } else {
+            hGroup.style.display = 'none';
+            wLabel.innerText = 'Außen-Seitenlänge (S) in mm';
+        }
+        calculate();
+    });
+
     function calculate() {
-        const type = document.getElementById('type').value;
+        const n = parseInt(document.getElementById('corners').value);
         const W = parseFloat(document.getElementById('W').value);
         const H = parseFloat(document.getElementById('H').value);
         const R_out = parseFloat(document.getElementById('R').value);
         const t = parseFloat(document.getElementById('t').value);
         const w = parseFloat(document.getElementById('w').value);
         const v = parseFloat(document.getElementById('v').value);
+        
         const errorMsg = document.getElementById('error-msg');
         const svgContainer = document.getElementById('svg-container');
 
         // Validierungen
         let errors = [];
-        if ([W, H, R_out, t, w, v].some(isNaN)) errors.push("Bitte fülle alle Felder mit gültigen Zahlen aus.");
+        if ([W, R_out, t, w, v].some(isNaN)) errors.push("Bitte fülle alle Felder mit gültigen Zahlen aus.");
+        if ((n === 2 || n === 4) && isNaN(H)) errors.push("Bitte gib eine gültige Höhe ein.");
         if (R_out <= t) errors.push("Der Außenradius (R) muss größer sein als die Holzstärke (t).");
-        if (W < 2 * R_out) errors.push("Die Breite (W) muss mindestens das Doppelte des Radius (2xR) betragen.");
-        if (H < 2 * R_out && type === 'box') errors.push("Die Höhe (H) muss mindestens das Doppelte des Radius (2xR) betragen.");
-        if (H < R_out && type === 'u-shape') errors.push("Die Schenkelhöhe (H) muss mindestens so groß wie der Radius sein.");
         if (t <= v) errors.push("Die Holzstärke (t) muss größer als der Steg (v) sein.");
+
+        // Minimal mögliche Seitenlänge abhängig vom Radius
+        const angle = (n === 2) ? 90 : (360 / n); // Biegewinkel pro Ecke
+        const alphaRad = (angle * Math.PI) / 180;
+        const tanHalf = Math.tan(alphaRad / 2);
+        const minSide = 2 * R_out * tanHalf;
+
+        if (W < minSide) errors.push(`Die Seitenlänge (W) muss bei diesem Radius mindestens ${minSide.toFixed(1)} mm betragen.`);
+        if (n === 4 && H < minSide) errors.push(`Die Höhe (H) muss bei diesem Radius mindestens ${minSide.toFixed(1)} mm betragen.`);
+        if (n === 2 && H < R_out * tanHalf) errors.push(`Die Schenkel (H) müssen bei diesem Radius mindestens ${(R_out * tanHalf).toFixed(1)} mm lang sein.`);
 
         if (errors.length > 0) {
             errorMsg.innerHTML = errors.join("<br>");
@@ -248,14 +278,14 @@
             return;
         }
 
-        // Berechnungen für EINE 90-Grad-Ecke
+        // Berechnungen für EINE Ecke
         const D = t - v; // Tiefe des Schnitts
-        const R_neutral = R_out - (v / 2); // Die Biegung passiert am Steg (außen)
-        const L_corner = (Math.PI * R_neutral) / 2; // Bogenlänge für 90 Grad
+        const R_neutral = R_out - (v / 2); 
+        const L_corner = (angle * Math.PI * R_neutral) / 180; // Bogenlänge der Ecke
         
-        const N_ideal = (Math.PI * D) / (2 * w);
-        const N = Math.ceil(N_ideal); // Aufrunden für genug Spiel
-        const S = L_corner / N; // Schnittabstand
+        const N_ideal = (angle * Math.PI * D) / (180 * w);
+        const N = Math.ceil(N_ideal); 
+        const S = L_corner / N; 
 
         if (S <= w) {
             errors.push(`Vorsicht: Schnitte überschneiden sich! Schnittabstand (${S.toFixed(1)}mm) ist kleiner als Sägeblatt (${w}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.`);
@@ -267,37 +297,45 @@
             errorMsg.style.display = 'none';
         }
 
-        // Längen der geraden Stücke berechnen
-        const W_str = W - 2 * R_out; 
+        // Gerade Strecken ermitteln
+        const L_str_W = W - minSide; 
+        let L_str_H = 0;
+        if (n === 2 || n === 4) {
+            L_str_H = H - (n === 2 ? R_out * tanHalf : minSide);
+        }
         
         let segments = [];
         let total_L = 0;
 
-        if (type === 'box') {
-            const H_str = H - 2 * R_out;
-            // Kasten: Stoß in der Mitte der unteren Breite
-            // Ablauf: Halbe Breite -> Ecke -> Höhe -> Ecke -> Breite oben -> Ecke -> Höhe -> Ecke -> Halbe Breite
+        if (n === 2) {
             segments = [
-                { type: 'straight', len: W_str / 2, label: 'B/2' },
+                { type: 'straight', len: L_str_H, label: 'H' },
                 { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: H_str, label: 'H' },
+                { type: 'straight', len: L_str_W, label: 'W' },
                 { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: W_str, label: 'B' },
+                { type: 'straight', len: L_str_H, label: 'H' }
+            ];
+        } else if (n === 4) {
+            segments = [
+                { type: 'straight', len: L_str_W / 2, label: 'W/2' },
                 { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: H_str, label: 'H' },
+                { type: 'straight', len: L_str_H, label: 'H' },
                 { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: W_str / 2, label: 'B/2' }
+                { type: 'straight', len: L_str_W, label: 'W' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: L_str_H, label: 'H' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: L_str_W / 2, label: 'W/2' }
             ];
         } else {
-            // U-Shape
-            const H_str = H - R_out;
-            segments = [
-                { type: 'straight', len: H_str, label: 'H' },
-                { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: W_str, label: 'B' },
-                { type: 'corner', len: L_corner, cuts: N },
-                { type: 'straight', len: H_str, label: 'H' }
-            ];
+            // Generisches regelmäßiges Polygon
+            segments.push({ type: 'straight', len: L_str_W / 2, label: 'S/2' });
+            for(let i=0; i < n - 1; i++) {
+                segments.push({ type: 'corner', len: L_corner, cuts: N });
+                segments.push({ type: 'straight', len: L_str_W, label: 'S' });
+            }
+            segments.push({ type: 'corner', len: L_corner, cuts: N });
+            segments.push({ type: 'straight', len: L_str_W / 2, label: 'S/2' });
         }
 
         segments.forEach(seg => total_L += seg.len);
@@ -308,17 +346,68 @@
         document.getElementById('res_d').innerText = D.toFixed(1) + " mm";
         document.getElementById('res_s').innerText = S.toFixed(2) + " mm";
 
-        drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, type);
+        // Fehlerbehebung: 'angle' als zusätzliches Argument an drawSVG übergeben
+        drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, n, alphaRad, angle);
     }
 
-    function drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, type) {
+    // Generiert den SVG-Pfad für ein zentriertes, regelmäßiges Polygon (für n > 4)
+    function getRegularPolygonPath(n, W, R_out, r_in, alphaRad) {
+        const A_out = W / (2 * Math.tan(alphaRad / 2));
+        const L_str = W - 2 * R_out * Math.tan(alphaRad / 2);
+        
+        function buildLoop(A, R) {
+            let d = "";
+            for (let i = 0; i < n; i++) {
+                // Berechnet Normalen- und Tangentenvektoren für jede Seite
+                const theta = (i * (360/n) - 90) * Math.PI / 180; 
+                const nx = Math.cos(theta), ny = Math.sin(theta);
+                const dx = -Math.sin(theta), dy = Math.cos(theta);
+                
+                const Cx = A * nx, Cy = A * ny; // Mitte der Seite
+                const P_start = { x: Cx - (L_str/2)*dx, y: Cy - (L_str/2)*dy };
+                const P_end = { x: Cx + (L_str/2)*dx, y: Cy + (L_str/2)*dy };
+                
+                if (i === 0) d += `M ${P_start.x} ${P_start.y} `;
+                d += `L ${P_end.x} ${P_end.y} `;
+                
+                // Abrundung (Arc) zur nächsten Seite
+                if (R > 0) {
+                    const thetaNext = ((i + 1) * (360/n) - 90) * Math.PI / 180;
+                    const nxNext = Math.cos(thetaNext), nyNext = Math.sin(thetaNext);
+                    const dxNext = -Math.sin(thetaNext), dyNext = Math.cos(thetaNext);
+                    
+                    const CxNext = A * nxNext, CyNext = A * nyNext;
+                    const P_startNext = { x: CxNext - (L_str/2)*dxNext, y: CyNext - (L_str/2)*dyNext };
+                    
+                    d += `A ${R} ${R} 0 0 1 ${P_startNext.x} ${P_startNext.y} `;
+                }
+            }
+            d += "Z ";
+            return d;
+        }
+        
+        const outer = buildLoop(A_out, R_out);
+        const inner = buildLoop(A_out - t, r_in); 
+        return outer + inner; 
+    }
+
+    // Parameter 'angle' wurde hier hinzugefügt
+    function drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, n, alphaRad, angle) {
         const b = 60; // Visuelle Breite des Bretts (Draufsicht)
         const padX = 30; // Rand links/rechts
         const padY = 50; // Rand oben/unten
         
-        // Dynamische SVG Größe anpassen für den zusätzlichen Rahmen unten
-        const width = total_L + 2 * padX;
-        const height = 250 + t + b + H + 120; 
+        let frameDrawHeight = H + 120; // Default für n=2 und n=4
+        let R_circum = 0;
+        
+        // Berechne Platzbedarf für regelmäßige Polygone
+        if (n > 4) {
+            R_circum = W / (2 * Math.sin(alphaRad / 2));
+            frameDrawHeight = (R_circum * 2) + 120;
+        }
+        
+        const width = Math.max(total_L + 2 * padX, 600); // Mindestbreite
+        const height = 250 + t + b + frameDrawHeight; 
         
         let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height}">`;
         svg += `<style>
@@ -331,46 +420,30 @@
             .corner-highlight { fill: rgba(239, 68, 68, 0.1); }
         </style>`;
 
-        // Responsive Schriftgrößen basierend auf der Länge (damit es beim Rauszoomen lesbar bleibt)
         const fs = Math.max(12, width * 0.015);
         const fsSmall = Math.max(10, width * 0.012);
 
-        // --- DRAUFSICHT (Oben) ---
+        // --- DRAUFSICHT (Abwicklung Oben) ---
         const ty = padY;
         svg += `<text x="${padX}" y="${ty - 15}" font-size="${fs}" class="title-text">Draufsicht (Innenseite mit Schnitten)</text>`;
-        
-        // Grundbrett
         svg += `<rect x="${padX}" y="${ty}" width="${total_L}" height="${b}" class="wood" />`;
 
         let currentX = padX;
         
-        // Segmente zeichnen
-        segments.forEach((seg, index) => {
+        segments.forEach((seg) => {
             if (seg.type === 'corner') {
-                // Hebe den Eckenbereich leicht farblich hervor
                 svg += `<rect x="${currentX}" y="${ty}" width="${seg.len}" height="${b}" class="corner-highlight" />`;
-                
-                // Schnitte zeichnen
                 for(let i = 0; i < seg.cuts; i++) {
                     const cutX = currentX + (S/2) + (i * S);
                     svg += `<rect x="${cutX - w/2}" y="${ty}" width="${w}" height="${b}" class="cut" />`;
                 }
-
-                // Beschriftung Ecke
-                const textY = ty + b + fs + 5;
-                svg += `<text x="${currentX + seg.len/2}" y="${textY}" text-anchor="middle" font-size="${fsSmall}" class="dim-text" fill="#b91c1c">Ecke: ${seg.len.toFixed(1)}</text>`;
+                svg += `<text x="${currentX + seg.len/2}" y="${ty + b + fs + 5}" text-anchor="middle" font-size="${fsSmall}" class="dim-text" fill="#b91c1c">Ecke</text>`;
             } else {
-                // Beschriftung Gerade
-                const textY = ty + b + fs + 5;
-                svg += `<text x="${currentX + seg.len/2}" y="${textY}" text-anchor="middle" font-size="${fsSmall}" class="dim-text">${seg.label}: ${seg.len.toFixed(1)}</text>`;
+                svg += `<text x="${currentX + seg.len/2}" y="${ty + b + fs + 5}" text-anchor="middle" font-size="${fsSmall}" class="dim-text">${seg.label}: ${seg.len.toFixed(1)}</text>`;
             }
-            
-            // Trennlinie für Bemaßung
             svg += `<line x1="${currentX}" y1="${ty + b}" x2="${currentX}" y2="${ty + b + 20}" class="dim-line" />`;
-            
             currentX += seg.len;
         });
-        // Letzte Trennlinie
         svg += `<line x1="${currentX}" y1="${ty + b}" x2="${currentX}" y2="${ty + b + 20}" class="dim-line" />`;
         
         // Gesamtlänge Bemaßung
@@ -380,11 +453,9 @@
         svg += `<line x1="${padX + total_L}" y1="${overAllY-5}" x2="${padX + total_L}" y2="${overAllY+5}" class="dim-tick" />`;
         svg += `<text x="${padX + total_L/2}" y="${overAllY - 5}" text-anchor="middle" font-size="${fs}" font-weight="bold" class="dim-text">Gesamtlänge Holzbrett = ${total_L.toFixed(1)} mm</text>`;
 
-
-        // --- SEITENANSICHT PROFIL (Unten) ---
+        // --- SEITENANSICHT PROFIL (Mitte) ---
         const sy = overAllY + 60;
         svg += `<text x="${padX}" y="${sy - 15}" font-size="${fs}" class="title-text">Seitenansicht (Schnitt-Tiefe)</text>`;
-        
         svg += `<rect x="${padX}" y="${sy}" width="${total_L}" height="${t}" class="wood" />`;
         
         currentX = padX;
@@ -392,7 +463,6 @@
             if (seg.type === 'corner') {
                 for(let i = 0; i < seg.cuts; i++) {
                     const cutX = currentX + (S/2) + (i * S);
-                    // Schnitt geht von oben nach unten, lässt unten 'v' stehen
                     svg += `<rect x="${cutX - w/2}" y="${sy}" width="${w}" height="${D}" class="cut" />`;
                 }
             }
@@ -405,88 +475,97 @@
         svg += `<line x1="${padX - 20}" y1="${sy}" x2="${padX - 20}" y2="${sy + t}" class="dim-line" />`;
         svg += `<text x="${padX - 30}" y="${sy + t/2 + fs/3}" text-anchor="end" font-size="${fs}" class="dim-text">t=${t}</text>`;
 
-        // --- DRAUFSICHT MONTIERTER RAHMEN ---
+        // --- DRAUFSICHT MONTIERTER RAHMEN (Unten) ---
         const frameY = sy + t + 80;
         svg += `<text x="${padX}" y="${frameY - 45}" font-size="${fs}" class="title-text">Montierter Zustand (Außenmaße)</text>`;
         
-        const frameX = padX + (total_L - W) / 2; // Zentriert den Rahmen unter der Abwicklung
-        let framePath = "";
+        const frameX = padX + (width - 2*padX - W) / 2; // Zentrieren
         const r_in = Math.max(0, R_out - t);
+        let framePath = "";
         
-        if (type === 'box') {
-            // Geschlossener Kasten (Äußerer und innerer Pfad)
+        if (n === 4) {
+            // Rechteck (Kasten)
             framePath += `M ${frameX + R_out} ${frameY} `;
-            framePath += `h ${W - 2*R_out} `;
-            framePath += `a ${R_out} ${R_out} 0 0 1 ${R_out} ${R_out} `;
-            framePath += `v ${H - 2*R_out} `;
-            framePath += `a ${R_out} ${R_out} 0 0 1 -${R_out} ${R_out} `;
-            framePath += `h -${W - 2*R_out} `;
-            framePath += `a ${R_out} ${R_out} 0 0 1 -${R_out} -${R_out} `;
-            framePath += `v -${H - 2*R_out} `;
-            framePath += `a ${R_out} ${R_out} 0 0 1 ${R_out} -${R_out} Z `;
+            framePath += `h ${W - 2*R_out} a ${R_out} ${R_out} 0 0 1 ${R_out} ${R_out} `;
+            framePath += `v ${H - 2*R_out} a ${R_out} ${R_out} 0 0 1 -${R_out} ${R_out} `;
+            framePath += `h -${W - 2*R_out} a ${R_out} ${R_out} 0 0 1 -${R_out} -${R_out} `;
+            framePath += `v -${H - 2*R_out} a ${R_out} ${R_out} 0 0 1 ${R_out} -${R_out} Z `;
             
-            // Innenkontur ausstanzen (evenodd fill rule)
             framePath += `M ${frameX + t + r_in} ${frameY + t} `;
-            framePath += `h ${W - 2*t - 2*r_in} `;
-            framePath += `a ${r_in} ${r_in} 0 0 1 ${r_in} ${r_in} `;
-            framePath += `v ${H - 2*t - 2*r_in} `;
-            framePath += `a ${r_in} ${r_in} 0 0 1 -${r_in} ${r_in} `;
-            framePath += `h -${W - 2*t - 2*r_in} `;
-            framePath += `a ${r_in} ${r_in} 0 0 1 -${r_in} -${r_in} `;
-            framePath += `v -${H - 2*t - 2*r_in} `;
-            framePath += `a ${r_in} ${r_in} 0 0 1 ${r_in} -${r_in} Z `;
+            framePath += `h ${W - 2*t - 2*r_in} a ${r_in} ${r_in} 0 0 1 ${r_in} ${r_in} `;
+            framePath += `v ${H - 2*t - 2*r_in} a ${r_in} ${r_in} 0 0 1 -${r_in} ${r_in} `;
+            framePath += `h -${W - 2*t - 2*r_in} a ${r_in} ${r_in} 0 0 1 -${r_in} -${r_in} `;
+            framePath += `v -${H - 2*t - 2*r_in} a ${r_in} ${r_in} 0 0 1 ${r_in} -${r_in} Z `;
+            
+            svg += `<path d="${framePath}" class="wood" fill-rule="evenodd" />`;
+
+            // Bemaßung für n=4
+            svg += `<line x1="${frameX}" y1="${frameY - 20}" x2="${frameX + W}" y2="${frameY - 20}" class="dim-line" />`;
+            svg += `<line x1="${frameX}" y1="${frameY - 25}" x2="${frameX}" y2="${frameY - 15}" class="dim-tick" />`;
+            svg += `<line x1="${frameX + W}" y1="${frameY - 25}" x2="${frameX + W}" y2="${frameY - 15}" class="dim-tick" />`;
+            svg += `<text x="${frameX + W/2}" y="${frameY - 25}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
+
+            svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
+            svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
+            svg += `<line x1="${frameX - 25}" y1="${frameY + H}" x2="${frameX - 15}" y2="${frameY + H}" class="dim-tick" />`;
+            svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">Höhe = ${H}</text>`;
+
+        } else if (n === 2) {
+            // U-Profil
+            const lX = frameX, rX = frameX + W, topY = frameY, botY = frameY + H;
+            framePath += `M ${lX} ${topY} L ${lX} ${botY - R_out} A ${R_out} ${R_out} 0 0 0 ${lX + R_out} ${botY} `; 
+            framePath += `L ${rX - R_out} ${botY} A ${R_out} ${R_out} 0 0 0 ${rX} ${botY - R_out} L ${rX} ${topY} `; 
+            framePath += `L ${rX - t} ${topY} L ${rX - t} ${botY - R_out} A ${r_in} ${r_in} 0 0 1 ${rX - R_out} ${botY - t} `; 
+            framePath += `L ${lX + R_out} ${botY - t} A ${r_in} ${r_in} 0 0 1 ${lX + t} ${botY - R_out} L ${lX + t} ${topY} Z`; 
+            
+            svg += `<path d="${framePath}" class="wood" fill-rule="evenodd" />`;
+            
+            // Bemaßung für n=2
+            svg += `<line x1="${frameX}" y1="${botY + 20}" x2="${frameX + W}" y2="${botY + 20}" class="dim-line" />`;
+            svg += `<line x1="${frameX}" y1="${botY + 15}" x2="${frameX}" y2="${botY + 25}" class="dim-tick" />`;
+            svg += `<line x1="${frameX + W}" y1="${botY + 15}" x2="${frameX + W}" y2="${botY + 25}" class="dim-tick" />`;
+            svg += `<text x="${frameX + W/2}" y="${botY + 35}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
+            
+            svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
+            svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
+            svg += `<line x1="${frameX - 25}" y1="${frameY + H}" x2="${frameX - 15}" y2="${frameY + H}" class="dim-tick" />`;
+            svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">H = ${H}</text>`;
+
         } else {
-            // U-Profil Kontur
-            const leftOutX = frameX;
-            const rightOutX = frameX + W;
-            const topY = frameY;
-            const botY = frameY + H;
+            // Polygon > 4
+            const cx = width / 2; // In der Mitte der Canvas platzieren
+            const cy = frameY + R_circum; // Vertikal ausrichten
             
-            framePath += `M ${leftOutX} ${topY} `; 
-            framePath += `L ${leftOutX} ${botY - R_out} `; 
-            framePath += `A ${R_out} ${R_out} 0 0 0 ${leftOutX + R_out} ${botY} `; 
-            framePath += `L ${rightOutX - R_out} ${botY} `; 
-            framePath += `A ${R_out} ${R_out} 0 0 0 ${rightOutX} ${botY - R_out} `; 
-            framePath += `L ${rightOutX} ${topY} `; 
+            const polyPath = getRegularPolygonPath(n, W, R_out, r_in, alphaRad);
+            svg += `<g transform="translate(${cx}, ${cy})">`;
+            svg += `<path d="${polyPath}" class="wood" fill-rule="evenodd" />`;
             
-            framePath += `L ${rightOutX - t} ${topY} `; 
-            framePath += `L ${rightOutX - t} ${botY - R_out} `; 
-            framePath += `A ${r_in} ${r_in} 0 0 1 ${rightOutX - R_out} ${botY - t} `; 
-            framePath += `L ${leftOutX + R_out} ${botY - t} `; 
-            framePath += `A ${r_in} ${r_in} 0 0 1 ${leftOutX + t} ${botY - R_out} `; 
-            framePath += `L ${leftOutX + t} ${topY} Z`; 
+            // Bemaßung obere Seite
+            const A_out = W / (2 * Math.tan(alphaRad / 2));
+            const dimY = -A_out - R_out - 10; // Oberhalb der geraden Seite
+            
+            svg += `<line x1="${-W/2}" y1="${dimY}" x2="${W/2}" y2="${dimY}" class="dim-line" />`;
+            svg += `<line x1="${-W/2}" y1="${dimY-5}" x2="${-W/2}" y2="${dimY+5}" class="dim-tick" />`;
+            svg += `<line x1="${W/2}" y1="${dimY-5}" x2="${W/2}" y2="${dimY+5}" class="dim-tick" />`;
+            svg += `<text x="0" y="${dimY - 8}" text-anchor="middle" font-size="${fs}" class="dim-text">Seitenlänge S = ${W}</text>`;
+            
+            // Zentrale Infos
+            svg += `<text x="0" y="-5" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">Radius R = ${R_out}</text>`;
+            svg += `<text x="0" y="${fs + 5}" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">Winkel = ${angle.toFixed(1)}° pro Ecke</text>`;
+
+            svg += `</g>`;
         }
-
-        svg += `<path d="${framePath}" class="wood" fill-rule="evenodd" />`;
-
-        // Bemaßung Montierter Rahmen
-        svg += `<line x1="${frameX}" y1="${frameY - 20}" x2="${frameX + W}" y2="${frameY - 20}" class="dim-line" />`;
-        svg += `<line x1="${frameX}" y1="${frameY - 25}" x2="${frameX}" y2="${frameY - 15}" class="dim-tick" />`;
-        svg += `<line x1="${frameX + W}" y1="${frameY - 25}" x2="${frameX + W}" y2="${frameY - 15}" class="dim-tick" />`;
-        svg += `<text x="${frameX + W/2}" y="${frameY - 25}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
-
-        svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
-        svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
-        svg += `<line x1="${frameX - 25}" y1="${frameY + H}" x2="${frameX - 15}" y2="${frameY + H}" class="dim-tick" />`;
-        svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">Höhe = ${H}</text>`;
-
-        const cX = frameX + W - R_out;
-        const cY = frameY + H - R_out;
-        svg += `<line x1="${cX}" y1="${cY}" x2="${frameX + W + 5}" y2="${frameY + H + 5}" class="dim-line" stroke-dasharray="2,2"/>`;
-        svg += `<circle cx="${cX}" cy="${cY}" r="3" fill="#475569" />`;
-        svg += `<text x="${frameX + W + 10}" y="${frameY + H + 12}" font-size="${fs}" class="dim-text">R = ${R_out}</text>`;
 
         svg += `</svg>`;
         document.getElementById('svg-container').innerHTML = svg;
     }
 
-    // Event Listener für alle Inputs
+    // Event Listener für alle Inputs ausführen
     document.querySelectorAll('input, select').forEach(input => {
         input.addEventListener('input', calculate);
-        input.addEventListener('change', calculate);
     });
 
-    // Initial load
+    // Initiale Berechnung
     window.onload = calculate;
 </script>
 </body>

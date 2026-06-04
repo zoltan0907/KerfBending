@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kerf Bending - Kasten & Rahmen Kalkulator</title>
+    <style>
+        :root {
+            --primary: #d97706; /* Holz-affines Orange/Braun */
+            --primary-hover: #b45309;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 2rem;
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+        .card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border);
+        }
+        h1, h2 { margin-top: 0; color: #1e293b; }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        select { cursor: pointer; background-color: #fff; }
+        
+        .btn-print {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: background-color 0.2s;
+        }
+        .btn-print:hover { background-color: var(--primary-hover); }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .result-item {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .result-item.highlight {
+            background: #fffbeb;
+            border-color: #fcd34d;
+        }
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .result-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            display: none;
+        }
+        .alert-error {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .svg-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px dashed var(--border);
+            background: white;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .section-title {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 1.1rem;
+        }
+        
+        @media print {
+            @page { size: landscape; margin: 10mm; }
+            body { padding: 0; background: white; }
+            .no-print { display: none !important; }
+            .container { display: block; max-width: none; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            .svg-container { border: none; padding: 0; margin: 0; overflow: visible; }
+            svg { max-width: 100% !important; height: auto !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Linke Spalte: Parameter -->
+    <div class="card no-print">
+        <h2>Rahmen Konfigurator</h2>
+        
+        <div class="form-group">
+            <label>Werkstück-Typ</label>
+            <select id="type">
+                <option value="box">Geschlossener Kasten (4 Ecken)</option>
+                <option value="u-shape">U-Profil / Offener Rahmen (2 Ecken)</option>
+            </select>
+        </div>
+
+        <h3 class="section-title">Außenmaße des fertigen Kastens</h3>
+        <div class="form-group">
+            <label>Außen-Breite (W) in mm</label>
+            <input type="number" id="W" value="300" step="1">
+        </div>
+        <div class="form-group">
+            <label>Außen-Höhe/Schenkel (H) in mm</label>
+            <input type="number" id="H" value="200" step="1">
+        </div>
+        <div class="form-group">
+            <label>Äußerer Eckradius (R) in mm</label>
+            <input type="number" id="R" value="30" step="1">
+        </div>
+        
+        <h3 class="section-title">Material & Werkzeug</h3>
+        <div class="form-group">
+            <label>Holzstärke (t) in mm</label>
+            <input type="number" id="t" value="18" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>Schnittbreite Sägeblatt (w) in mm</label>
+            <input type="number" id="w" value="3.2" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>Steg / Reststärke (v) in mm</label>
+            <input type="number" id="v" value="2" step="0.1">
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
+
+        <button class="btn-print" onclick="window.print()">Skizze & Maße Drucken</button>
+    </div>
+
+    <!-- Rechte Spalte: Ergebnisse und Skizze -->
+    <div class="card">
+        <h2 class="no-print">Abwicklung & Schnittplan</h2>
+        
+        <div id="error-msg" class="alert alert-error"></div>
+
+        <div class="results-grid no-print">
+            <div class="result-item highlight">
+                <div class="result-value" id="res_total_L">-</div>
+                <div class="result-label">Brettlänge Gesamt</div>
+            </div>
+            <div class="result-item">
+                <div class="result-value" id="res_n">-</div>
+                <div class="result-label">Schnitte pro Ecke (N)</div>
+            </div>
+            <div class="result-item">
+                <div class="result-value" id="res_d">-</div>
+                <div class="result-label">Schnitttiefe am Blatt</div>
+            </div>
+            <div class="result-item">
+                <div class="result-value" id="res_s">-</div>
+                <div class="result-label">Schnittabstand (Mitte-Mitte)</div>
+            </div>
+        </div>
+
+        <div class="svg-container" id="svg-container">
+            <!-- SVG Skizze -->
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const type = document.getElementById('type').value;
+        const W = parseFloat(document.getElementById('W').value);
+        const H = parseFloat(document.getElementById('H').value);
+        const R_out = parseFloat(document.getElementById('R').value);
+        const t = parseFloat(document.getElementById('t').value);
+        const w = parseFloat(document.getElementById('w').value);
+        const v = parseFloat(document.getElementById('v').value);
+        const errorMsg = document.getElementById('error-msg');
+        const svgContainer = document.getElementById('svg-container');
+
+        // Validierungen
+        let errors = [];
+        if ([W, H, R_out, t, w, v].some(isNaN)) errors.push("Bitte fülle alle Felder mit gültigen Zahlen aus.");
+        if (R_out <= t) errors.push("Der Außenradius (R) muss größer sein als die Holzstärke (t).");
+        if (W < 2 * R_out) errors.push("Die Breite (W) muss mindestens das Doppelte des Radius (2xR) betragen.");
+        if (H < 2 * R_out && type === 'box') errors.push("Die Höhe (H) muss mindestens das Doppelte des Radius (2xR) betragen.");
+        if (H < R_out && type === 'u-shape') errors.push("Die Schenkelhöhe (H) muss mindestens so groß wie der Radius sein.");
+        if (t <= v) errors.push("Die Holzstärke (t) muss größer als der Steg (v) sein.");
+
+        if (errors.length > 0) {
+            errorMsg.innerHTML = errors.join("<br>");
+            errorMsg.style.display = 'block';
+            svgContainer.innerHTML = '';
+            return;
+        }
+
+        // Berechnungen für EINE 90-Grad-Ecke
+        const D = t - v; // Tiefe des Schnitts
+        const R_neutral = R_out - (v / 2); // Die Biegung passiert am Steg (außen)
+        const L_corner = (Math.PI * R_neutral) / 2; // Bogenlänge für 90 Grad
+        
+        const N_ideal = (Math.PI * D) / (2 * w);
+        const N = Math.ceil(N_ideal); // Aufrunden für genug Spiel
+        const S = L_corner / N; // Schnittabstand
+
+        if (S <= w) {
+            errors.push(`Vorsicht: Schnitte überschneiden sich! Schnittabstand (${S.toFixed(1)}mm) ist kleiner als Sägeblatt (${w}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.`);
+            errorMsg.innerHTML = errors.join("<br>");
+            errorMsg.style.display = 'block';
+            svgContainer.innerHTML = '';
+            return;
+        } else {
+            errorMsg.style.display = 'none';
+        }
+
+        // Längen der geraden Stücke berechnen
+        const W_str = W - 2 * R_out; 
+        
+        let segments = [];
+        let total_L = 0;
+
+        if (type === 'box') {
+            const H_str = H - 2 * R_out;
+            // Kasten: Stoß in der Mitte der unteren Breite
+            // Ablauf: Halbe Breite -> Ecke -> Höhe -> Ecke -> Breite oben -> Ecke -> Höhe -> Ecke -> Halbe Breite
+            segments = [
+                { type: 'straight', len: W_str / 2, label: 'B/2' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: H_str, label: 'H' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: W_str, label: 'B' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: H_str, label: 'H' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: W_str / 2, label: 'B/2' }
+            ];
+        } else {
+            // U-Shape
+            const H_str = H - R_out;
+            segments = [
+                { type: 'straight', len: H_str, label: 'H' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: W_str, label: 'B' },
+                { type: 'corner', len: L_corner, cuts: N },
+                { type: 'straight', len: H_str, label: 'H' }
+            ];
+        }
+
+        segments.forEach(seg => total_L += seg.len);
+
+        // UI Text-Updates
+        document.getElementById('res_total_L').innerText = total_L.toFixed(1) + " mm";
+        document.getElementById('res_n').innerText = N;
+        document.getElementById('res_d').innerText = D.toFixed(1) + " mm";
+        document.getElementById('res_s').innerText = S.toFixed(2) + " mm";
+
+        drawSVG(segments, total_L, t, v, w, D, S);
+    }
+
+    function drawSVG(segments, total_L, t, v, w, D, S) {
+        const b = 60; // Visuelle Breite des Bretts (Draufsicht)
+        const padX = 30; // Rand links/rechts
+        const padY = 50; // Rand oben/unten
+        
+        // Dynamische SVG Größe
+        const width = total_L + 2 * padX;
+        const height = 250 + t + b;
+        
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height}">`;
+        svg += `<style>
+            .wood { fill: #fde68a; stroke: #b45309; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+            .cut { fill: #ffffff; stroke: #b45309; stroke-width: 0.5px; vector-effect: non-scaling-stroke; }
+            .dim-line { stroke: #475569; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+            .dim-tick { stroke: #475569; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+            .dim-text { fill: #0f172a; font-family: sans-serif; }
+            .title-text { font-weight: bold; fill: #0f172a; font-family: sans-serif; }
+            .corner-highlight { fill: rgba(239, 68, 68, 0.1); }
+        </style>`;
+
+        // Responsive Schriftgrößen basierend auf der Länge (damit es beim Rauszoomen lesbar bleibt)
+        const fs = Math.max(12, width * 0.015);
+        const fsSmall = Math.max(10, width * 0.012);
+
+        // --- DRAUFSICHT (Oben) ---
+        const ty = padY;
+        svg += `<text x="${padX}" y="${ty - 15}" font-size="${fs}" class="title-text">Draufsicht (Innenseite mit Schnitten)</text>`;
+        
+        // Grundbrett
+        svg += `<rect x="${padX}" y="${ty}" width="${total_L}" height="${b}" class="wood" />`;
+
+        let currentX = padX;
+        
+        // Segmente zeichnen
+        segments.forEach((seg, index) => {
+            if (seg.type === 'corner') {
+                // Hebe den Eckenbereich leicht farblich hervor
+                svg += `<rect x="${currentX}" y="${ty}" width="${seg.len}" height="${b}" class="corner-highlight" />`;
+                
+                // Schnitte zeichnen
+                for(let i = 0; i < seg.cuts; i++) {
+                    const cutX = currentX + (S/2) + (i * S);
+                    svg += `<rect x="${cutX - w/2}" y="${ty}" width="${w}" height="${b}" class="cut" />`;
+                }
+
+                // Beschriftung Ecke
+                const textY = ty + b + fs + 5;
+                svg += `<text x="${currentX + seg.len/2}" y="${textY}" text-anchor="middle" font-size="${fsSmall}" class="dim-text" fill="#b91c1c">Ecke: ${seg.len.toFixed(1)}</text>`;
+            } else {
+                // Beschriftung Gerade
+                const textY = ty + b + fs + 5;
+                svg += `<text x="${currentX + seg.len/2}" y="${textY}" text-anchor="middle" font-size="${fsSmall}" class="dim-text">${seg.label}: ${seg.len.toFixed(1)}</text>`;
+            }
+            
+            // Trennlinie für Bemaßung
+            svg += `<line x1="${currentX}" y1="${ty + b}" x2="${currentX}" y2="${ty + b + 20}" class="dim-line" />`;
+            
+            currentX += seg.len;
+        });
+        // Letzte Trennlinie
+        svg += `<line x1="${currentX}" y1="${ty + b}" x2="${currentX}" y2="${ty + b + 20}" class="dim-line" />`;
+        
+        // Gesamtlänge Bemaßung
+        const overAllY = ty + b + 45 + fs;
+        svg += `<line x1="${padX}" y1="${overAllY}" x2="${padX + total_L}" y2="${overAllY}" class="dim-line" />`;
+        svg += `<line x1="${padX}" y1="${overAllY-5}" x2="${padX}" y2="${overAllY+5}" class="dim-tick" />`;
+        svg += `<line x1="${padX + total_L}" y1="${overAllY-5}" x2="${padX + total_L}" y2="${overAllY+5}" class="dim-tick" />`;
+        svg += `<text x="${padX + total_L/2}" y="${overAllY - 5}" text-anchor="middle" font-size="${fs}" font-weight="bold" class="dim-text">Gesamtlänge Holzbrett = ${total_L.toFixed(1)} mm</text>`;
+
+
+        // --- SEITENANSICHT PROFIL (Unten) ---
+        const sy = overAllY + 60;
+        svg += `<text x="${padX}" y="${sy - 15}" font-size="${fs}" class="title-text">Seitenansicht (Schnitt-Tiefe)</text>`;
+        
+        svg += `<rect x="${padX}" y="${sy}" width="${total_L}" height="${t}" class="wood" />`;
+        
+        currentX = padX;
+        segments.forEach(seg => {
+            if (seg.type === 'corner') {
+                for(let i = 0; i < seg.cuts; i++) {
+                    const cutX = currentX + (S/2) + (i * S);
+                    // Schnitt geht von oben nach unten, lässt unten 'v' stehen
+                    svg += `<rect x="${cutX - w/2}" y="${sy}" width="${w}" height="${D}" class="cut" />`;
+                }
+            }
+            currentX += seg.len;
+        });
+
+        // Bemaßung Dicke
+        svg += `<line x1="${padX - 10}" y1="${sy}" x2="${padX - 25}" y2="${sy}" class="dim-line" />`;
+        svg += `<line x1="${padX - 10}" y1="${sy + t}" x2="${padX - 25}" y2="${sy + t}" class="dim-line" />`;
+        svg += `<line x1="${padX - 20}" y1="${sy}" x2="${padX - 20}" y2="${sy + t}" class="dim-line" />`;
+        svg += `<text x="${padX - 30}" y="${sy + t/2 + fs/3}" text-anchor="end" font-size="${fs}" class="dim-text">t=${t}</text>`;
+
+        svg += `</svg>`;
+        document.getElementById('svg-container').innerHTML = svg;
+    }
+
+    // Event Listener für alle Inputs
+    document.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', calculate);
+        input.addEventListener('change', calculate);
+    });
+
+    // Initial load
+    window.onload = calculate;
+</script>
+</body>
+</html>

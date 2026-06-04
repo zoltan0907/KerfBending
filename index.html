@@ -129,6 +129,28 @@
             border-top: 1px solid var(--border);
             font-size: 1.1rem;
         }
+
+        .lang-switch {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .lang-switch button {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            border-radius: 0.25rem;
+            font-weight: bold;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
         
         @media print {
             @page { size: landscape; margin: 10mm; }
@@ -146,76 +168,81 @@
 <div class="container">
     <!-- Linke Spalte: Parameter -->
     <div class="card no-print">
-        <h2>Polygon Konfigurator</h2>
+        <div class="lang-switch">
+            <button id="btn-de" class="active" onclick="setLang('de')">DE</button>
+            <button id="btn-en" onclick="setLang('en')">EN</button>
+        </div>
+
+        <h2 data-i18n="configTitle">Polygon Konfigurator</h2>
         
         <div class="form-group">
-            <label>Anzahl der Ecken / Form</label>
+            <label data-i18n="shapeLabel">Anzahl der Ecken / Form</label>
             <select id="corners">
-                <option value="2">2 Ecken (U-Profil, 90°)</option>
-                <option value="4" selected>4 Ecken (Kasten/Rechteck, 90°)</option>
-                <option value="6">6 Ecken (Sechseck, 60°)</option>
-                <option value="8">8 Ecken (Achteck, 45°)</option>
-                <option value="10">10 Ecken (Zehneck, 36°)</option>
-                <option value="12">12 Ecken (Zwölfeck, 30°)</option>
-                <option value="16">16 Ecken (Sechzehneck, 22.5°)</option>
+                <option value="2" data-i18n="opt2">2 Ecken (U-Profil, 90°)</option>
+                <option value="4" selected data-i18n="opt4">4 Ecken (Kasten/Rechteck, 90°)</option>
+                <option value="6" data-i18n="opt6">6 Ecken (Sechseck, 60°)</option>
+                <option value="8" data-i18n="opt8">8 Ecken (Achteck, 45°)</option>
+                <option value="10" data-i18n="opt10">10 Ecken (Zehneck, 36°)</option>
+                <option value="12" data-i18n="opt12">12 Ecken (Zwölfeck, 30°)</option>
+                <option value="16" data-i18n="opt16">16 Ecken (Sechzehneck, 22.5°)</option>
             </select>
         </div>
 
-        <h3 class="section-title">Außenmaße des fertigen Körpers</h3>
+        <h3 class="section-title" data-i18n="dimTitle">Außenmaße des fertigen Körpers</h3>
         <div class="form-group">
-            <label id="w-label">Außen-Breite (W) in mm</label>
+            <label id="w-label" data-i18n="widthLabel">Außen-Breite (W) in mm</label>
             <input type="number" id="W" value="300" step="1">
         </div>
         <div class="form-group" id="h-group">
-            <label>Außen-Höhe/Schenkel (H) in mm</label>
+            <label data-i18n="heightLabel">Außen-Höhe/Schenkel (H) in mm</label>
             <input type="number" id="H" value="200" step="1">
         </div>
         <div class="form-group">
-            <label>Äußerer Eckradius (R) in mm</label>
+            <label data-i18n="radiusLabel">Äußerer Eckradius (R) in mm</label>
             <input type="number" id="R" value="30" step="1">
         </div>
         
-        <h3 class="section-title">Material & Werkzeug</h3>
+        <h3 class="section-title" data-i18n="matTitle">Material & Werkzeug</h3>
         <div class="form-group">
-            <label>Holzstärke (t) in mm</label>
+            <label data-i18n="thickLabel">Holzstärke (t) in mm</label>
             <input type="number" id="t" value="18" step="0.1">
         </div>
         <div class="form-group">
-            <label>Schnittbreite Sägeblatt (w) in mm</label>
+            <label data-i18n="bladeLabel">Schnittbreite Sägeblatt (w) in mm</label>
             <input type="number" id="w" value="3.2" step="0.1">
         </div>
         <div class="form-group">
-            <label>Steg / Reststärke (v) in mm</label>
+            <label data-i18n="webLabel">Steg / Reststärke (v) in mm</label>
             <input type="number" id="v" value="2" step="0.1">
         </div>
         
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
 
-        <button class="btn-print" onclick="window.print()">Skizze & Maße Drucken</button>
+        <button class="btn-print" onclick="window.print()" data-i18n="printBtn">Skizze & Maße Drucken</button>
     </div>
 
     <!-- Rechte Spalte: Ergebnisse und Skizze -->
     <div class="card">
-        <h2 class="no-print">Abwicklung & Schnittplan</h2>
+        <h2 class="no-print" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
         
         <div id="error-msg" class="alert alert-error"></div>
 
         <div class="results-grid no-print">
             <div class="result-item highlight">
                 <div class="result-value" id="res_total_L">-</div>
-                <div class="result-label">Brettlänge Gesamt</div>
+                <div class="result-label" data-i18n="resLength">Brettlänge Gesamt</div>
             </div>
             <div class="result-item">
                 <div class="result-value" id="res_n">-</div>
-                <div class="result-label">Schnitte pro Ecke (N)</div>
+                <div class="result-label" data-i18n="resCuts">Schnitte pro Ecke (N)</div>
             </div>
             <div class="result-item">
                 <div class="result-value" id="res_d">-</div>
-                <div class="result-label">Schnitttiefe am Blatt</div>
+                <div class="result-label" data-i18n="resDepth">Schnitttiefe am Blatt</div>
             </div>
             <div class="result-item">
                 <div class="result-value" id="res_s">-</div>
-                <div class="result-label">Schnittabstand (Mitte-Mitte)</div>
+                <div class="result-label" data-i18n="resSpacing">Schnittabstand (Mitte-Mitte)</div>
             </div>
         </div>
 
@@ -226,6 +253,79 @@
 </div>
 
 <script>
+    const dict = {
+        de: {
+            configTitle: "Polygon Konfigurator", shapeLabel: "Anzahl der Ecken / Form",
+            opt2: "2 Ecken (U-Profil, 90°)", opt4: "4 Ecken (Kasten/Rechteck, 90°)",
+            opt6: "6 Ecken (Sechseck, 60°)", opt8: "8 Ecken (Achteck, 45°)",
+            opt10: "10 Ecken (Zehneck, 36°)", opt12: "12 Ecken (Zwölfeck, 30°)", opt16: "16 Ecken (Sechzehneck, 22.5°)",
+            dimTitle: "Außenmaße des fertigen Körpers", widthLabel: "Außen-Breite (W) in mm", sideLabel: "Außen-Seitenlänge (S) in mm",
+            heightLabel: "Außen-Höhe/Schenkel (H) in mm", radiusLabel: "Äußerer Eckradius (R) in mm",
+            matTitle: "Material & Werkzeug", thickLabel: "Holzstärke (t) in mm",
+            bladeLabel: "Schnittbreite Sägeblatt (w) in mm", webLabel: "Steg / Reststärke (v) in mm",
+            printBtn: "Skizze & Maße Drucken", resTitle: "Abwicklung & Schnittplan",
+            resLength: "Brettlänge Gesamt", resCuts: "Schnitte pro Ecke (N)",
+            resDepth: "Schnitttiefe am Blatt", resSpacing: "Schnittabstand (Mitte-Mitte)",
+            errFill: "Bitte fülle alle Felder mit gültigen Zahlen aus.", errHeight: "Bitte gib eine gültige Höhe ein.",
+            errRad: "Der Außenradius (R) muss größer sein als die Holzstärke (t).", errThick: "Die Holzstärke (t) muss größer als der Steg (v) sein.",
+            errMinSide: "Die Seitenlänge (W) muss bei diesem Radius mindestens {0} mm betragen.",
+            errMinHeightBox: "Die Höhe (H) muss bei diesem Radius mindestens {0} mm betragen.",
+            errMinHeightU: "Die Schenkel (H) müssen bei diesem Radius mindestens {0} mm lang sein.",
+            errOverlap: "Vorsicht: Schnitte überschneiden sich! Schnittabstand ({0}mm) ist kleiner als Sägeblatt ({1}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.",
+            svgTop: "Draufsicht (Innenseite mit Schnitten)", svgCorner: "Ecke", svgTotal: "Gesamtlänge Holzbrett",
+            svgSide: "Seitenansicht (Schnitt-Tiefe)", svgMount: "Montierter Zustand (Außenmaße)",
+            svgWidth: "Breite", svgHeight: "Höhe", svgSideLen: "Seitenlänge S", svgRad: "Radius R", svgAngle: "Winkel = {0}° pro Ecke"
+        },
+        en: {
+            configTitle: "Polygon Configurator", shapeLabel: "Number of corners / Shape",
+            opt2: "2 Corners (U-Profile, 90°)", opt4: "4 Corners (Box/Rectangle, 90°)",
+            opt6: "6 Corners (Hexagon, 60°)", opt8: "8 Corners (Octagon, 45°)",
+            opt10: "10 Corners (Decagon, 36°)", opt12: "12 Corners (Dodecagon, 30°)", opt16: "16 Corners (Hexadecagon, 22.5°)",
+            dimTitle: "Outer dimensions of the finished body", widthLabel: "Outer Width (W) in mm", sideLabel: "Outer Side Length (S) in mm",
+            heightLabel: "Outer Height/Leg (H) in mm", radiusLabel: "Outer Corner Radius (R) in mm",
+            matTitle: "Material & Tools", thickLabel: "Wood Thickness (t) in mm",
+            bladeLabel: "Blade Kerf Width (w) in mm", webLabel: "Web / Remaining Thickness (v) in mm",
+            printBtn: "Print Sketch & Dimensions", resTitle: "Flat Layout & Cut Plan",
+            resLength: "Total Board Length", resCuts: "Cuts per Corner (N)",
+            resDepth: "Cut Depth at Blade", resSpacing: "Cut Spacing (Center-Center)",
+            errFill: "Please fill in all fields with valid numbers.", errHeight: "Please enter a valid height.",
+            errRad: "The outer radius (R) must be greater than the wood thickness (t).", errThick: "Wood thickness (t) must be greater than the web (v).",
+            errMinSide: "The side length (W) must be at least {0} mm for this radius.",
+            errMinHeightBox: "The height (H) must be at least {0} mm for this radius.",
+            errMinHeightU: "The legs (H) must be at least {0} mm long for this radius.",
+            errOverlap: "Warning: Cuts overlap! Cut spacing ({0}mm) is smaller than blade width ({1}mm). Please increase radius or use a thinner blade.",
+            svgTop: "Top View (Inside with cuts)", svgCorner: "Corner", svgTotal: "Total Board Length",
+            svgSide: "Side View (Cut depth)", svgMount: "Assembled State (Outer dimensions)",
+            svgWidth: "Width", svgHeight: "Height", svgSideLen: "Side length S", svgRad: "Radius R", svgAngle: "Angle = {0}° per corner"
+        }
+    };
+
+    let lang = 'de';
+
+    function setLang(l) {
+        lang = l;
+        document.getElementById('btn-de').classList.toggle('active', l === 'de');
+        document.getElementById('btn-en').classList.toggle('active', l === 'en');
+        
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if(dict[lang][key]) el.innerText = dict[lang][key];
+        });
+
+        // Update w-label based on current selection and language
+        const n = parseInt(document.getElementById('corners').value);
+        document.getElementById('w-label').innerText = (n === 2 || n === 4) ? dict[lang].widthLabel : dict[lang].sideLabel;
+        
+        calculate();
+    }
+
+    // Helper für Strings mit Platzhaltern (z.B. {0})
+    function formatStr(str, ...args) {
+        return str.replace(/{(\d+)}/g, function(match, number) { 
+            return typeof args[number] != 'undefined' ? args[number] : match;
+        });
+    }
+
     // Event Listener für UI-Logik (Dropdown verändert angezeigte Felder)
     document.getElementById('corners').addEventListener('change', function() {
         const n = parseInt(this.value);
@@ -234,10 +334,10 @@
         
         if (n === 2 || n === 4) {
             hGroup.style.display = 'block';
-            wLabel.innerText = 'Außen-Breite (W) in mm';
+            wLabel.innerText = dict[lang].widthLabel;
         } else {
             hGroup.style.display = 'none';
-            wLabel.innerText = 'Außen-Seitenlänge (S) in mm';
+            wLabel.innerText = dict[lang].sideLabel;
         }
         calculate();
     });
@@ -254,12 +354,12 @@
         const errorMsg = document.getElementById('error-msg');
         const svgContainer = document.getElementById('svg-container');
 
-        // Validierungen
+        // Validierungen über das Dictionary
         let errors = [];
-        if ([W, R_out, t, w, v].some(isNaN)) errors.push("Bitte fülle alle Felder mit gültigen Zahlen aus.");
-        if ((n === 2 || n === 4) && isNaN(H)) errors.push("Bitte gib eine gültige Höhe ein.");
-        if (R_out <= t) errors.push("Der Außenradius (R) muss größer sein als die Holzstärke (t).");
-        if (t <= v) errors.push("Die Holzstärke (t) muss größer als der Steg (v) sein.");
+        if ([W, R_out, t, w, v].some(isNaN)) errors.push(dict[lang].errFill);
+        if ((n === 2 || n === 4) && isNaN(H)) errors.push(dict[lang].errHeight);
+        if (R_out <= t) errors.push(dict[lang].errRad);
+        if (t <= v) errors.push(dict[lang].errThick);
 
         // Minimal mögliche Seitenlänge abhängig vom Radius
         const angle = (n === 2) ? 90 : (360 / n); // Biegewinkel pro Ecke
@@ -267,9 +367,9 @@
         const tanHalf = Math.tan(alphaRad / 2);
         const minSide = 2 * R_out * tanHalf;
 
-        if (W < minSide) errors.push(`Die Seitenlänge (W) muss bei diesem Radius mindestens ${minSide.toFixed(1)} mm betragen.`);
-        if (n === 4 && H < minSide) errors.push(`Die Höhe (H) muss bei diesem Radius mindestens ${minSide.toFixed(1)} mm betragen.`);
-        if (n === 2 && H < R_out * tanHalf) errors.push(`Die Schenkel (H) müssen bei diesem Radius mindestens ${(R_out * tanHalf).toFixed(1)} mm lang sein.`);
+        if (W < minSide) errors.push(formatStr(dict[lang].errMinSide, minSide.toFixed(1)));
+        if (n === 4 && H < minSide) errors.push(formatStr(dict[lang].errMinHeightBox, minSide.toFixed(1)));
+        if (n === 2 && H < R_out * tanHalf) errors.push(formatStr(dict[lang].errMinHeightU, (R_out * tanHalf).toFixed(1)));
 
         if (errors.length > 0) {
             errorMsg.innerHTML = errors.join("<br>");
@@ -288,7 +388,7 @@
         const S = L_corner / N; 
 
         if (S <= w) {
-            errors.push(`Vorsicht: Schnitte überschneiden sich! Schnittabstand (${S.toFixed(1)}mm) ist kleiner als Sägeblatt (${w}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.`);
+            errors.push(formatStr(dict[lang].errOverlap, S.toFixed(1), w));
             errorMsg.innerHTML = errors.join("<br>");
             errorMsg.style.display = 'block';
             svgContainer.innerHTML = '';
@@ -425,7 +525,7 @@
 
         // --- DRAUFSICHT (Abwicklung Oben) ---
         const ty = padY;
-        svg += `<text x="${padX}" y="${ty - 15}" font-size="${fs}" class="title-text">Draufsicht (Innenseite mit Schnitten)</text>`;
+        svg += `<text x="${padX}" y="${ty - 15}" font-size="${fs}" class="title-text">${dict[lang].svgTop}</text>`;
         svg += `<rect x="${padX}" y="${ty}" width="${total_L}" height="${b}" class="wood" />`;
 
         let currentX = padX;
@@ -437,7 +537,7 @@
                     const cutX = currentX + (S/2) + (i * S);
                     svg += `<rect x="${cutX - w/2}" y="${ty}" width="${w}" height="${b}" class="cut" />`;
                 }
-                svg += `<text x="${currentX + seg.len/2}" y="${ty + b + fs + 5}" text-anchor="middle" font-size="${fsSmall}" class="dim-text" fill="#b91c1c">Ecke</text>`;
+                svg += `<text x="${currentX + seg.len/2}" y="${ty + b + fs + 5}" text-anchor="middle" font-size="${fsSmall}" class="dim-text" fill="#b91c1c">${dict[lang].svgCorner}</text>`;
             } else {
                 svg += `<text x="${currentX + seg.len/2}" y="${ty + b + fs + 5}" text-anchor="middle" font-size="${fsSmall}" class="dim-text">${seg.label}: ${seg.len.toFixed(1)}</text>`;
             }
@@ -451,11 +551,11 @@
         svg += `<line x1="${padX}" y1="${overAllY}" x2="${padX + total_L}" y2="${overAllY}" class="dim-line" />`;
         svg += `<line x1="${padX}" y1="${overAllY-5}" x2="${padX}" y2="${overAllY+5}" class="dim-tick" />`;
         svg += `<line x1="${padX + total_L}" y1="${overAllY-5}" x2="${padX + total_L}" y2="${overAllY+5}" class="dim-tick" />`;
-        svg += `<text x="${padX + total_L/2}" y="${overAllY - 5}" text-anchor="middle" font-size="${fs}" font-weight="bold" class="dim-text">Gesamtlänge Holzbrett = ${total_L.toFixed(1)} mm</text>`;
+        svg += `<text x="${padX + total_L/2}" y="${overAllY - 5}" text-anchor="middle" font-size="${fs}" font-weight="bold" class="dim-text">${dict[lang].svgTotal} = ${total_L.toFixed(1)} mm</text>`;
 
         // --- SEITENANSICHT PROFIL (Mitte) ---
         const sy = overAllY + 60;
-        svg += `<text x="${padX}" y="${sy - 15}" font-size="${fs}" class="title-text">Seitenansicht (Schnitt-Tiefe)</text>`;
+        svg += `<text x="${padX}" y="${sy - 15}" font-size="${fs}" class="title-text">${dict[lang].svgSide}</text>`;
         svg += `<rect x="${padX}" y="${sy}" width="${total_L}" height="${t}" class="wood" />`;
         
         currentX = padX;
@@ -477,7 +577,7 @@
 
         // --- DRAUFSICHT MONTIERTER RAHMEN (Unten) ---
         const frameY = sy + t + 80;
-        svg += `<text x="${padX}" y="${frameY - 45}" font-size="${fs}" class="title-text">Montierter Zustand (Außenmaße)</text>`;
+        svg += `<text x="${padX}" y="${frameY - 45}" font-size="${fs}" class="title-text">${dict[lang].svgMount}</text>`;
         
         const frameX = padX + (width - 2*padX - W) / 2; // Zentrieren
         const r_in = Math.max(0, R_out - t);
@@ -503,12 +603,12 @@
             svg += `<line x1="${frameX}" y1="${frameY - 20}" x2="${frameX + W}" y2="${frameY - 20}" class="dim-line" />`;
             svg += `<line x1="${frameX}" y1="${frameY - 25}" x2="${frameX}" y2="${frameY - 15}" class="dim-tick" />`;
             svg += `<line x1="${frameX + W}" y1="${frameY - 25}" x2="${frameX + W}" y2="${frameY - 15}" class="dim-tick" />`;
-            svg += `<text x="${frameX + W/2}" y="${frameY - 25}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
+            svg += `<text x="${frameX + W/2}" y="${frameY - 25}" text-anchor="middle" font-size="${fs}" class="dim-text">${dict[lang].svgWidth} = ${W}</text>`;
 
             svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
             svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
             svg += `<line x1="${frameX - 25}" y1="${frameY + H}" x2="${frameX - 15}" y2="${frameY + H}" class="dim-tick" />`;
-            svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">Höhe = ${H}</text>`;
+            svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">${dict[lang].svgHeight} = ${H}</text>`;
 
         } else if (n === 2) {
             // U-Profil
@@ -524,7 +624,7 @@
             svg += `<line x1="${frameX}" y1="${botY + 20}" x2="${frameX + W}" y2="${botY + 20}" class="dim-line" />`;
             svg += `<line x1="${frameX}" y1="${botY + 15}" x2="${frameX}" y2="${botY + 25}" class="dim-tick" />`;
             svg += `<line x1="${frameX + W}" y1="${botY + 15}" x2="${frameX + W}" y2="${botY + 25}" class="dim-tick" />`;
-            svg += `<text x="${frameX + W/2}" y="${botY + 35}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
+            svg += `<text x="${frameX + W/2}" y="${botY + 35}" text-anchor="middle" font-size="${fs}" class="dim-text">${dict[lang].svgWidth} = ${W}</text>`;
             
             svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
             svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
@@ -547,11 +647,11 @@
             svg += `<line x1="${-W/2}" y1="${dimY}" x2="${W/2}" y2="${dimY}" class="dim-line" />`;
             svg += `<line x1="${-W/2}" y1="${dimY-5}" x2="${-W/2}" y2="${dimY+5}" class="dim-tick" />`;
             svg += `<line x1="${W/2}" y1="${dimY-5}" x2="${W/2}" y2="${dimY+5}" class="dim-tick" />`;
-            svg += `<text x="0" y="${dimY - 8}" text-anchor="middle" font-size="${fs}" class="dim-text">Seitenlänge S = ${W}</text>`;
+            svg += `<text x="0" y="${dimY - 8}" text-anchor="middle" font-size="${fs}" class="dim-text">${dict[lang].svgSideLen} = ${W}</text>`;
             
             // Zentrale Infos
-            svg += `<text x="0" y="-5" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">Radius R = ${R_out}</text>`;
-            svg += `<text x="0" y="${fs + 5}" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">Winkel = ${angle.toFixed(1)}° pro Ecke</text>`;
+            svg += `<text x="0" y="-5" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">${dict[lang].svgRad} = ${R_out}</text>`;
+            svg += `<text x="0" y="${fs + 5}" text-anchor="middle" font-size="${fs}" class="dim-text" fill="#64748b">${formatStr(dict[lang].svgAngle, angle.toFixed(1))}</text>`;
 
             svg += `</g>`;
         }

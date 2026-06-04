@@ -308,17 +308,17 @@
         document.getElementById('res_d').innerText = D.toFixed(1) + " mm";
         document.getElementById('res_s').innerText = S.toFixed(2) + " mm";
 
-        drawSVG(segments, total_L, t, v, w, D, S);
+        drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, type);
     }
 
-    function drawSVG(segments, total_L, t, v, w, D, S) {
+    function drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, type) {
         const b = 60; // Visuelle Breite des Bretts (Draufsicht)
         const padX = 30; // Rand links/rechts
         const padY = 50; // Rand oben/unten
         
-        // Dynamische SVG Größe
+        // Dynamische SVG Größe anpassen für den zusätzlichen Rahmen unten
         const width = total_L + 2 * padX;
-        const height = 250 + t + b;
+        const height = 250 + t + b + H + 120; 
         
         let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height}">`;
         svg += `<style>
@@ -404,6 +404,77 @@
         svg += `<line x1="${padX - 10}" y1="${sy + t}" x2="${padX - 25}" y2="${sy + t}" class="dim-line" />`;
         svg += `<line x1="${padX - 20}" y1="${sy}" x2="${padX - 20}" y2="${sy + t}" class="dim-line" />`;
         svg += `<text x="${padX - 30}" y="${sy + t/2 + fs/3}" text-anchor="end" font-size="${fs}" class="dim-text">t=${t}</text>`;
+
+        // --- DRAUFSICHT MONTIERTER RAHMEN ---
+        const frameY = sy + t + 80;
+        svg += `<text x="${padX}" y="${frameY - 45}" font-size="${fs}" class="title-text">Montierter Zustand (Außenmaße)</text>`;
+        
+        const frameX = padX + (total_L - W) / 2; // Zentriert den Rahmen unter der Abwicklung
+        let framePath = "";
+        const r_in = Math.max(0, R_out - t);
+        
+        if (type === 'box') {
+            // Geschlossener Kasten (Äußerer und innerer Pfad)
+            framePath += `M ${frameX + R_out} ${frameY} `;
+            framePath += `h ${W - 2*R_out} `;
+            framePath += `a ${R_out} ${R_out} 0 0 1 ${R_out} ${R_out} `;
+            framePath += `v ${H - 2*R_out} `;
+            framePath += `a ${R_out} ${R_out} 0 0 1 -${R_out} ${R_out} `;
+            framePath += `h -${W - 2*R_out} `;
+            framePath += `a ${R_out} ${R_out} 0 0 1 -${R_out} -${R_out} `;
+            framePath += `v -${H - 2*R_out} `;
+            framePath += `a ${R_out} ${R_out} 0 0 1 ${R_out} -${R_out} Z `;
+            
+            // Innenkontur ausstanzen (evenodd fill rule)
+            framePath += `M ${frameX + t + r_in} ${frameY + t} `;
+            framePath += `h ${W - 2*t - 2*r_in} `;
+            framePath += `a ${r_in} ${r_in} 0 0 1 ${r_in} ${r_in} `;
+            framePath += `v ${H - 2*t - 2*r_in} `;
+            framePath += `a ${r_in} ${r_in} 0 0 1 -${r_in} ${r_in} `;
+            framePath += `h -${W - 2*t - 2*r_in} `;
+            framePath += `a ${r_in} ${r_in} 0 0 1 -${r_in} -${r_in} `;
+            framePath += `v -${H - 2*t - 2*r_in} `;
+            framePath += `a ${r_in} ${r_in} 0 0 1 ${r_in} -${r_in} Z `;
+        } else {
+            // U-Profil Kontur
+            const leftOutX = frameX;
+            const rightOutX = frameX + W;
+            const topY = frameY;
+            const botY = frameY + H;
+            
+            framePath += `M ${leftOutX} ${topY} `; 
+            framePath += `L ${leftOutX} ${botY - R_out} `; 
+            framePath += `A ${R_out} ${R_out} 0 0 0 ${leftOutX + R_out} ${botY} `; 
+            framePath += `L ${rightOutX - R_out} ${botY} `; 
+            framePath += `A ${R_out} ${R_out} 0 0 0 ${rightOutX} ${botY - R_out} `; 
+            framePath += `L ${rightOutX} ${topY} `; 
+            
+            framePath += `L ${rightOutX - t} ${topY} `; 
+            framePath += `L ${rightOutX - t} ${botY - R_out} `; 
+            framePath += `A ${r_in} ${r_in} 0 0 1 ${rightOutX - R_out} ${botY - t} `; 
+            framePath += `L ${leftOutX + R_out} ${botY - t} `; 
+            framePath += `A ${r_in} ${r_in} 0 0 1 ${leftOutX + t} ${botY - R_out} `; 
+            framePath += `L ${leftOutX + t} ${topY} Z`; 
+        }
+
+        svg += `<path d="${framePath}" class="wood" fill-rule="evenodd" />`;
+
+        // Bemaßung Montierter Rahmen
+        svg += `<line x1="${frameX}" y1="${frameY - 20}" x2="${frameX + W}" y2="${frameY - 20}" class="dim-line" />`;
+        svg += `<line x1="${frameX}" y1="${frameY - 25}" x2="${frameX}" y2="${frameY - 15}" class="dim-tick" />`;
+        svg += `<line x1="${frameX + W}" y1="${frameY - 25}" x2="${frameX + W}" y2="${frameY - 15}" class="dim-tick" />`;
+        svg += `<text x="${frameX + W/2}" y="${frameY - 25}" text-anchor="middle" font-size="${fs}" class="dim-text">Breite = ${W}</text>`;
+
+        svg += `<line x1="${frameX - 20}" y1="${frameY}" x2="${frameX - 20}" y2="${frameY + H}" class="dim-line" />`;
+        svg += `<line x1="${frameX - 25}" y1="${frameY}" x2="${frameX - 15}" y2="${frameY}" class="dim-tick" />`;
+        svg += `<line x1="${frameX - 25}" y1="${frameY + H}" x2="${frameX - 15}" y2="${frameY + H}" class="dim-tick" />`;
+        svg += `<text x="${frameX - 30}" y="${frameY + H/2}" text-anchor="middle" font-size="${fs}" transform="rotate(-90 ${frameX - 30} ${frameY + H/2})" class="dim-text">Höhe = ${H}</text>`;
+
+        const cX = frameX + W - R_out;
+        const cY = frameY + H - R_out;
+        svg += `<line x1="${cX}" y1="${cY}" x2="${frameX + W + 5}" y2="${frameY + H + 5}" class="dim-line" stroke-dasharray="2,2"/>`;
+        svg += `<circle cx="${cX}" cy="${cY}" r="3" fill="#475569" />`;
+        svg += `<text x="${frameX + W + 10}" y="${frameY + H + 12}" font-size="${fs}" class="dim-text">R = ${R_out}</text>`;
 
         svg += `</svg>`;
         document.getElementById('svg-container').innerHTML = svg;

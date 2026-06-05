@@ -152,12 +152,47 @@
             border-color: var(--primary);
         }
         
+        .print-only {
+            display: none;
+        }
+
         @media print {
             @page { size: landscape; margin: 10mm; }
             body { padding: 0; background: white; }
             .no-print { display: none !important; }
+            .print-only { display: flex !important; }
             .container { display: block; max-width: none; }
             .card { box-shadow: none; border: none; padding: 0; }
+            
+            .print-header {
+                gap: 2rem;
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+                border: 2px solid #cbd5e1;
+                border-radius: 0.5rem;
+                background: #f8fafc;
+            }
+            .print-section { flex: 1; }
+            .print-section h3 {
+                margin-top: 0;
+                font-size: 14pt;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
+                color: #0f172a;
+            }
+            .print-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 11pt;
+                margin-bottom: 0.4rem;
+                color: #334155;
+            }
+            .print-row strong {
+                font-weight: bold;
+                color: #0f172a;
+            }
+
             .svg-container { border: none; padding: 0; margin: 0; overflow: visible; }
             svg { max-width: 100% !important; height: auto !important; }
         }
@@ -223,6 +258,27 @@
 
     <!-- Rechte Spalte: Ergebnisse und Skizze -->
     <div class="card">
+        
+        <!-- Print-Only Legende (wird nur beim Drucken angezeigt) -->
+        <div class="print-header print-only">
+            <div class="print-section">
+                <h3 data-i18n="printSettings">Parameter & Einstellungen</h3>
+                <div class="print-row"><span data-i18n="printShape">Form</span>: <strong id="print-shape">-</strong></div>
+                <div class="print-row"><span data-i18n="printDim">Außenmaße</span>: <strong id="print-dim">-</strong></div>
+                <div class="print-row"><span data-i18n="printRadius">Radius (R)</span>: <strong id="print-r">-</strong></div>
+                <div class="print-row"><span data-i18n="printThick">Holzstärke (t)</span>: <strong id="print-t">-</strong></div>
+                <div class="print-row"><span data-i18n="printBlade">Sägeblatt (w)</span>: <strong id="print-w">-</strong></div>
+                <div class="print-row"><span data-i18n="printWeb">Steg (v)</span>: <strong id="print-v">-</strong></div>
+            </div>
+            <div class="print-section">
+                <h3 data-i18n="printResults">Schnitt-Ergebnisse</h3>
+                <div class="print-row"><span data-i18n="resLength">Brettlänge Gesamt</span>: <strong id="print-res-l">-</strong></div>
+                <div class="print-row"><span data-i18n="resCuts">Schnitte pro Ecke (N)</span>: <strong id="print-res-n">-</strong></div>
+                <div class="print-row"><span data-i18n="resDepth">Schnitttiefe am Blatt</span>: <strong id="print-res-d">-</strong></div>
+                <div class="print-row"><span data-i18n="resSpacing">Schnittabstand (Mitte-Mitte)</span>: <strong id="print-res-s">-</strong></div>
+            </div>
+        </div>
+
         <h2 class="no-print" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
         
         <div id="error-msg" class="alert alert-error"></div>
@@ -274,7 +330,8 @@
             errOverlap: "Vorsicht: Schnitte überschneiden sich! Schnittabstand ({0}mm) ist kleiner als Sägeblatt ({1}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.",
             svgTop: "Draufsicht (Innenseite mit Schnitten)", svgCorner: "Ecke", svgTotal: "Gesamtlänge Holzbrett",
             svgSide: "Seitenansicht (Schnitt-Tiefe)", svgMount: "Montierter Zustand (Außenmaße)",
-            svgWidth: "Breite", svgHeight: "Höhe", svgSideLen: "Seitenlänge S", svgRad: "Radius R", svgAngle: "Winkel = {0}° pro Ecke"
+            svgWidth: "Breite", svgHeight: "Höhe", svgSideLen: "Seitenlänge S", svgRad: "Radius R", svgAngle: "Winkel = {0}° pro Ecke",
+            printSettings: "Parameter & Einstellungen", printShape: "Form", printDim: "Außenmaße", printRadius: "Radius (R)", printThick: "Holzstärke (t)", printBlade: "Sägeblatt (w)", printWeb: "Steg (v)", printResults: "Schnitt-Ergebnisse"
         },
         en: {
             configTitle: "Polygon Configurator", shapeLabel: "Number of corners / Shape",
@@ -296,7 +353,8 @@
             errOverlap: "Warning: Cuts overlap! Cut spacing ({0}mm) is smaller than blade width ({1}mm). Please increase radius or use a thinner blade.",
             svgTop: "Top View (Inside with cuts)", svgCorner: "Corner", svgTotal: "Total Board Length",
             svgSide: "Side View (Cut depth)", svgMount: "Assembled State (Outer dimensions)",
-            svgWidth: "Width", svgHeight: "Height", svgSideLen: "Side length S", svgRad: "Radius R", svgAngle: "Angle = {0}° per corner"
+            svgWidth: "Width", svgHeight: "Height", svgSideLen: "Side length S", svgRad: "Radius R", svgAngle: "Angle = {0}° per corner",
+            printSettings: "Parameters & Settings", printShape: "Shape", printDim: "Outer Dimensions", printRadius: "Radius (R)", printThick: "Wood Thickness (t)", printBlade: "Blade Width (w)", printWeb: "Web (v)", printResults: "Cutting Results"
         }
     };
 
@@ -445,6 +503,20 @@
         document.getElementById('res_n').innerText = N;
         document.getElementById('res_d').innerText = D.toFixed(1) + " mm";
         document.getElementById('res_s').innerText = S.toFixed(2) + " mm";
+
+        // Print-Legend Updates (Werte für den Ausdruck)
+        const selCorner = document.getElementById('corners');
+        document.getElementById('print-shape').innerText = selCorner.options[selCorner.selectedIndex].text;
+        document.getElementById('print-dim').innerText = (n === 2 || n === 4) ? `${W} x ${H} mm` : `S = ${W} mm`;
+        document.getElementById('print-r').innerText = R_out + " mm";
+        document.getElementById('print-t').innerText = t + " mm";
+        document.getElementById('print-w').innerText = w + " mm";
+        document.getElementById('print-v').innerText = v + " mm";
+        
+        document.getElementById('print-res-l').innerText = total_L.toFixed(1) + " mm";
+        document.getElementById('print-res-n').innerText = N;
+        document.getElementById('print-res-d').innerText = D.toFixed(1) + " mm";
+        document.getElementById('print-res-s').innerText = S.toFixed(2) + " mm";
 
         // Fehlerbehebung: 'angle' als zusätzliches Argument an drawSVG übergeben
         drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, n, alphaRad, angle);

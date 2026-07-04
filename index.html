@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kerf Bending - Polygon & Rahmen Kalkulator</title>
+    
+    <!-- PWA & Mobile Meta-Tags -->
+    <meta name="theme-color" content="#d97706">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <style>
         :root {
             --primary: #d97706;
@@ -324,6 +330,66 @@
 </div>
 
 <script>
+    // --- PWA SETUP (Generiert Manifest und PNG-Icons dynamisch in der 1-File-Lösung) ---
+    (function setupPWA() {
+        // 1. Hochauflösendes App-Icon als SVG definieren (Holz-biege-Motiv)
+        const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="112" fill="#d97706"/>
+            <path d="M120 400 V270 A 50 50 0 0 1 170 220 H400 V120 H170 A 150 150 0 0 0 20 270 V400 Z" fill="#ffffff" opacity="0.9"/>
+            <path d="M180 400 V280 A 10 10 0 0 1 190 270 H400 V180 H190 A 100 100 0 0 0 90 280 V400 Z" fill="#ffffff" opacity="0.6"/>
+            <circle cx="330" cy="330" r="60" fill="#ffffff"/>
+        </svg>`;
+        const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgIcon);
+
+        // 2. SVG sofort als Browser-Favicon einsetzen (Vermeidet das leere Standard-Icon im Tab)
+        const linkIcon = document.createElement('link');
+        linkIcon.rel = 'icon';
+        linkIcon.type = 'image/svg+xml';
+        linkIcon.href = svgDataUrl;
+        document.head.appendChild(linkIcon);
+
+        // 3. SVG unsichtbar auf ein Canvas rendern, um echte PNG-Dateien für das Manifest zu generieren
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            // Echtzeit-Generierung des PNGs
+            const pngDataUrl = canvas.toDataURL('image/png');
+
+            // Apple Touch Icon (Für den iOS Homescreen zwingend nötig)
+            const linkApple = document.createElement('link');
+            linkApple.rel = 'apple-touch-icon';
+            linkApple.href = pngDataUrl;
+            document.head.appendChild(linkApple);
+
+            // 4. Manifest.json dynamisch bauen und injizieren
+            const manifest = {
+                name: "Kerf Bending Kalkulator",
+                short_name: "KerfBender",
+                display: "standalone",
+                start_url: window.location.pathname,
+                background_color: "#f8fafc",
+                theme_color: "#d97706",
+                description: "Berechne Einschnittbiegungen für Holzrahmen und Polygone",
+                icons: [
+                    { src: pngDataUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+                    { src: pngDataUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+                ]
+            };
+
+            const manifestDataUrl = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+            const linkManifest = document.createElement('link');
+            linkManifest.rel = 'manifest';
+            linkManifest.href = manifestDataUrl;
+            document.head.appendChild(linkManifest);
+        };
+        img.src = svgDataUrl;
+    })();
+
     const dict = {
         de: {
             configTitle: "Polygon Konfigurator", shapeLabel: "Anzahl der Ecken / Form",

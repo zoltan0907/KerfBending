@@ -205,6 +205,13 @@
             .svg-container { border: none; padding: 0; margin: 0; overflow: visible; }
             svg { max-width: 100% !important; height: auto !important; }
         }
+
+        /* Responsives Design für mobile Geräte (PWA) */
+        @media (max-width: 800px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -266,6 +273,19 @@
         
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
 
+        <!-- Fehler und Warnungen direkt über dem Druck-Button platzieren! -->
+        <div id="error-msg" class="alert alert-error"></div>
+
+        <!-- Neuer Warnungs-Block für zu kleine Radien (Ausrissgefahr) -->
+        <div id="radius-warning" class="alert no-print" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; display: none; margin-bottom: 1.5rem;">
+            <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="warnRadiusTitle">Biegeradius extrem klein!</h4>
+            <p id="warn-text" style="margin-top: 0; margin-bottom: 1rem;"></p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button id="btn-fix-radius" style="background: #b45309; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;"></button>
+                <button onclick="acceptSmallRadius()" style="background: transparent; color: #b45309; border: 1px solid #b45309; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;" data-i18n="btnIgnore">Risiko akzeptieren</button>
+            </div>
+        </div>
+
         <button class="btn-print" onclick="window.print()" data-i18n="printBtn">Skizze & Maße Drucken</button>
     </div>
 
@@ -295,18 +315,6 @@
 
         <h2 class="no-print" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
         
-        <div id="error-msg" class="alert alert-error"></div>
-
-        <!-- Neuer Warnungs-Block für zu kleine Radien (Ausrissgefahr) -->
-        <div id="radius-warning" class="alert no-print" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; display: none; margin-bottom: 1.5rem;">
-            <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="warnRadiusTitle">Biegeradius extrem klein!</h4>
-            <p id="warn-text" style="margin-top: 0; margin-bottom: 1rem;"></p>
-            <div style="display: flex; gap: 1rem;">
-                <button id="btn-fix-radius" style="background: #b45309; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;"></button>
-                <button onclick="acceptSmallRadius()" style="background: transparent; color: #b45309; border: 1px solid #b45309; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;" data-i18n="btnIgnore">Risiko akzeptieren</button>
-            </div>
-        </div>
-
         <div class="results-grid no-print">
             <div class="result-item highlight">
                 <div class="result-value" id="res_total_L">-</div>
@@ -454,6 +462,26 @@
         const warnMsg = document.getElementById('radius-warning');
         const svgContainer = document.getElementById('svg-container');
 
+        // Funktion zum Zurücksetzen der Ergebnisse, damit keine alten/falschen Werte gedruckt werden
+        function clearResults() {
+            document.getElementById('res_total_L').innerText = "-";
+            document.getElementById('res_n').innerText = "-";
+            document.getElementById('res_d').innerText = "-";
+            document.getElementById('res_s').innerText = "-";
+            
+            document.getElementById('print-shape').innerText = "-";
+            document.getElementById('print-dim').innerText = "-";
+            document.getElementById('print-r').innerText = "-";
+            document.getElementById('print-t').innerText = "-";
+            document.getElementById('print-w').innerText = "-";
+            document.getElementById('print-v').innerText = "-";
+            document.getElementById('print-res-l').innerText = "-";
+            document.getElementById('print-res-n').innerText = "-";
+            document.getElementById('print-res-d').innerText = "-";
+            document.getElementById('print-res-s').innerText = "-";
+            document.getElementById('print-res-mat').innerText = "-";
+        }
+
         // Validierungen über das Dictionary
         let errors = [];
         if ([W, R_out, t, w, v].some(isNaN)) errors.push(dict[lang].errFill);
@@ -476,6 +504,7 @@
             errorMsg.style.display = 'block';
             warnMsg.style.display = 'none';
             svgContainer.innerHTML = '';
+            clearResults();
             return;
         }
 
@@ -496,6 +525,7 @@
             errorMsg.style.display = 'block';
             warnMsg.style.display = 'none';
             svgContainer.innerHTML = '';
+            clearResults();
             return;
         } else {
             errorMsg.style.display = 'none';
@@ -520,6 +550,7 @@
             
             warnMsg.style.display = 'block';
             svgContainer.innerHTML = '';
+            clearResults();
             return;
         } else {
             warnMsg.style.display = 'none';

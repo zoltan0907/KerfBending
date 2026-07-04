@@ -250,6 +250,10 @@
             <label data-i18n="webLabel">Steg / Reststärke (v) in mm</label>
             <input type="number" id="v" value="2" step="0.1">
         </div>
+        <div class="form-group">
+            <label data-i18n="minSpacingLabel" style="color: #b45309;">Min. Abstand zwischen Schnitten in mm</label>
+            <input type="number" id="min_s" value="2.0" step="0.1" style="border-color: #fcd34d; background-color: #fffbeb;">
+        </div>
         
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
 
@@ -276,12 +280,23 @@
                 <div class="print-row"><span data-i18n="resCuts">Schnitte pro Ecke (N)</span>: <strong id="print-res-n">-</strong></div>
                 <div class="print-row"><span data-i18n="resDepth">Schnitttiefe am Blatt</span>: <strong id="print-res-d">-</strong></div>
                 <div class="print-row"><span data-i18n="resSpacing">Schnittabstand (Mitte-Mitte)</span>: <strong id="print-res-s">-</strong></div>
+                <div class="print-row"><span data-i18n="resMaterialLeft">Holz zwischen Schnitten</span>: <strong id="print-res-mat">-</strong></div>
             </div>
         </div>
 
         <h2 class="no-print" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
         
         <div id="error-msg" class="alert alert-error"></div>
+
+        <!-- Neuer Warnungs-Block für zu kleine Radien (Ausrissgefahr) -->
+        <div id="radius-warning" class="alert no-print" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; display: none; margin-bottom: 1.5rem;">
+            <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="warnRadiusTitle">Biegeradius extrem klein!</h4>
+            <p id="warn-text" style="margin-top: 0; margin-bottom: 1rem;"></p>
+            <div style="display: flex; gap: 1rem;">
+                <button id="btn-fix-radius" style="background: #b45309; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;"></button>
+                <button onclick="acceptSmallRadius()" style="background: transparent; color: #b45309; border: 1px solid #b45309; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-weight: bold;" data-i18n="btnIgnore">Risiko akzeptieren</button>
+            </div>
+        </div>
 
         <div class="results-grid no-print">
             <div class="result-item highlight">
@@ -319,15 +334,19 @@
             heightLabel: "Außen-Höhe/Schenkel (H) in mm", radiusLabel: "Äußerer Eckradius (R) in mm",
             matTitle: "Material & Werkzeug", thickLabel: "Holzstärke (t) in mm",
             bladeLabel: "Schnittbreite Sägeblatt (w) in mm", webLabel: "Steg / Reststärke (v) in mm",
+            minSpacingLabel: "Min. Abstand zwischen Schnitten (Vermeidet Ausriss)",
             printBtn: "Skizze & Maße Drucken", resTitle: "Abwicklung & Schnittplan",
             resLength: "Brettlänge Gesamt", resCuts: "Schnitte pro Ecke (N)",
-            resDepth: "Schnitttiefe am Blatt", resSpacing: "Schnittabstand (Mitte-Mitte)",
+            resDepth: "Schnitttiefe am Blatt", resSpacing: "Schnittabstand (Mitte-Mitte)", resMaterialLeft: "Holz zwischen Schnitten",
             errFill: "Bitte fülle alle Felder mit gültigen Zahlen aus.", errHeight: "Bitte gib eine gültige Höhe ein.",
-            errRad: "Der Außenradius (R) muss größer sein als die Holzstärke (t).", errThick: "Die Holzstärke (t) muss größer als der Steg (v) sein.",
+            errRad: "Der Außenradius (R) muss größer sein als die Holzstärke (t).", errThick: "Die Holzstärke (t) muss größer als der Steg (v).",
             errMinSide: "Die Seitenlänge (W) muss bei diesem Radius mindestens {0} mm betragen.",
             errMinHeightBox: "Die Höhe (H) muss bei diesem Radius mindestens {0} mm betragen.",
             errMinHeightU: "Die Schenkel (H) müssen bei diesem Radius mindestens {0} mm lang sein.",
-            errOverlap: "Vorsicht: Schnitte überschneiden sich! Schnittabstand ({0}mm) ist kleiner als Sägeblatt ({1}mm). Bitte Radius vergrößern oder dünneres Blatt nutzen.",
+            errOverlap: "Fataler Fehler: Schnitte überschneiden sich! Schnittabstand ({0}mm) ist kleiner als das Sägeblatt ({1}mm).",
+            warnRadiusTitle: "Biegeradius extrem klein (Ausrissgefahr)!",
+            warnRadiusText: "Es bleiben nur {0} mm Holz zwischen den Schnitten stehen. Das Limit liegt bei {2} mm. Dies führt oft zu Ausrissen am Sägeblatt. Ein sicherer Mindest-Außenradius für dieses Material-Setup wäre {1} mm.",
+            btnFixRadius: "Radius auf {0} mm korrigieren", btnIgnore: "Risiko akzeptieren & zeichnen",
             svgTop: "Draufsicht (Innenseite mit Schnitten)", svgCorner: "Ecke", svgTotal: "Gesamtlänge Holzbrett",
             svgSide: "Seitenansicht (Schnitt-Tiefe)", svgMount: "Montierter Zustand (Außenmaße)",
             svgWidth: "Breite", svgHeight: "Höhe", svgSideLen: "Seitenlänge S", svgRad: "Radius R", svgAngle: "Winkel = {0}° pro Ecke",
@@ -342,15 +361,19 @@
             heightLabel: "Outer Height/Leg (H) in mm", radiusLabel: "Outer Corner Radius (R) in mm",
             matTitle: "Material & Tools", thickLabel: "Wood Thickness (t) in mm",
             bladeLabel: "Blade Kerf Width (w) in mm", webLabel: "Web / Remaining Thickness (v) in mm",
+            minSpacingLabel: "Min. spacing between cuts (Prevents tear-out)",
             printBtn: "Print Sketch & Dimensions", resTitle: "Flat Layout & Cut Plan",
             resLength: "Total Board Length", resCuts: "Cuts per Corner (N)",
-            resDepth: "Cut Depth at Blade", resSpacing: "Cut Spacing (Center-Center)",
+            resDepth: "Cut Depth at Blade", resSpacing: "Cut Spacing (Center-Center)", resMaterialLeft: "Wood between cuts",
             errFill: "Please fill in all fields with valid numbers.", errHeight: "Please enter a valid height.",
             errRad: "The outer radius (R) must be greater than the wood thickness (t).", errThick: "Wood thickness (t) must be greater than the web (v).",
             errMinSide: "The side length (W) must be at least {0} mm for this radius.",
             errMinHeightBox: "The height (H) must be at least {0} mm for this radius.",
             errMinHeightU: "The legs (H) must be at least {0} mm long for this radius.",
-            errOverlap: "Warning: Cuts overlap! Cut spacing ({0}mm) is smaller than blade width ({1}mm). Please increase radius or use a thinner blade.",
+            errOverlap: "Fatal Error: Cuts overlap! Cut spacing ({0}mm) is smaller than blade width ({1}mm).",
+            warnRadiusTitle: "Bending radius extremely small (Tear-out risk)!",
+            warnRadiusText: "Only {0} mm of wood remains between the cuts (Limit is {2} mm). This often causes tear-out on the table saw. A safe minimum outer radius for this material setup would be {1} mm.",
+            btnFixRadius: "Adjust radius to {0} mm", btnIgnore: "Accept risk & draw anyway",
             svgTop: "Top View (Inside with cuts)", svgCorner: "Corner", svgTotal: "Total Board Length",
             svgSide: "Side View (Cut depth)", svgMount: "Assembled State (Outer dimensions)",
             svgWidth: "Width", svgHeight: "Height", svgSideLen: "Side length S", svgRad: "Radius R", svgAngle: "Angle = {0}° per corner",
@@ -359,6 +382,7 @@
     };
 
     let lang = 'de';
+    let acceptedSmallRadius = false;
 
     function setLang(l) {
         lang = l;
@@ -384,6 +408,12 @@
         });
     }
 
+    // Wenn der Nutzer manuell das Risiko eingehen will
+    function acceptSmallRadius() {
+        acceptedSmallRadius = true;
+        calculate();
+    }
+
     // Event Listener für UI-Logik (Dropdown verändert angezeigte Felder)
     document.getElementById('corners').addEventListener('change', function() {
         const n = parseInt(this.value);
@@ -397,6 +427,7 @@
             hGroup.style.display = 'none';
             wLabel.innerText = dict[lang].sideLabel;
         }
+        acceptedSmallRadius = false; // Reset Risk Acceptance
         calculate();
     });
 
@@ -408,8 +439,10 @@
         const t = parseFloat(document.getElementById('t').value);
         const w = parseFloat(document.getElementById('w').value);
         const v = parseFloat(document.getElementById('v').value);
+        const min_s = parseFloat(document.getElementById('min_s').value) || 0;
         
         const errorMsg = document.getElementById('error-msg');
+        const warnMsg = document.getElementById('radius-warning');
         const svgContainer = document.getElementById('svg-container');
 
         // Validierungen über das Dictionary
@@ -432,6 +465,7 @@
         if (errors.length > 0) {
             errorMsg.innerHTML = errors.join("<br>");
             errorMsg.style.display = 'block';
+            warnMsg.style.display = 'none';
             svgContainer.innerHTML = '';
             return;
         }
@@ -439,20 +473,47 @@
         // Berechnungen für EINE Ecke
         const D = t - v; // Tiefe des Schnitts
         const R_neutral = R_out - (v / 2); 
-        const L_corner = (angle * Math.PI * R_neutral) / 180; // Bogenlänge der Ecke
+        const L_corner = (alphaRad * R_neutral); // Bogenlänge der Ecke
         
-        const N_ideal = (angle * Math.PI * D) / (180 * w);
+        const N_ideal = (alphaRad * D) / w;
         const N = Math.ceil(N_ideal); 
         const S = L_corner / N; 
+        const material_between_cuts = S - w;
 
-        if (S <= w) {
+        // Harter Fehler: Mathematisch unmöglich (Sägeblatt dicker als Abstand)
+        if (material_between_cuts <= 0) {
             errors.push(formatStr(dict[lang].errOverlap, S.toFixed(1), w));
             errorMsg.innerHTML = errors.join("<br>");
             errorMsg.style.display = 'block';
+            warnMsg.style.display = 'none';
             svgContainer.innerHTML = '';
             return;
         } else {
             errorMsg.style.display = 'none';
+        }
+
+        // Weiche Warnung: Ausrissgefahr wegen zu dünner Stege
+        if (material_between_cuts < min_s && !acceptedSmallRadius) {
+            // Berechne den exakten Radius, bei dem material_between_cuts >= min_s wäre
+            const R_neutral_safe = (N * (w + min_s)) / alphaRad;
+            let recommended_R = R_neutral_safe + (v / 2);
+            recommended_R = Math.ceil(recommended_R * 10) / 10; // Auf 1 Kommastelle aufrunden
+
+            document.getElementById('warn-text').innerText = formatStr(dict[lang].warnRadiusText, material_between_cuts.toFixed(1), recommended_R.toFixed(1), min_s.toFixed(1));
+            
+            const btnFix = document.getElementById('btn-fix-radius');
+            btnFix.innerText = formatStr(dict[lang].btnFixRadius, recommended_R.toFixed(1));
+            btnFix.onclick = () => {
+                document.getElementById('R').value = recommended_R;
+                acceptedSmallRadius = false;
+                calculate();
+            };
+            
+            warnMsg.style.display = 'block';
+            svgContainer.innerHTML = '';
+            return;
+        } else {
+            warnMsg.style.display = 'none';
         }
 
         // Gerade Strecken ermitteln
@@ -517,8 +578,9 @@
         document.getElementById('print-res-n').innerText = N;
         document.getElementById('print-res-d').innerText = D.toFixed(1) + " mm";
         document.getElementById('print-res-s').innerText = S.toFixed(2) + " mm";
+        document.getElementById('print-res-mat').innerText = material_between_cuts.toFixed(2) + " mm";
 
-        // Fehlerbehebung: 'angle' als zusätzliches Argument an drawSVG übergeben
+        // Parameter 'angle' wurde hier hinzugefügt
         drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, n, alphaRad, angle);
     }
 
@@ -563,7 +625,6 @@
         return outer + inner; 
     }
 
-    // Parameter 'angle' wurde hier hinzugefügt
     function drawSVG(segments, total_L, t, v, w, D, S, W, H, R_out, n, alphaRad, angle) {
         const b = 60; // Visuelle Breite des Bretts (Draufsicht)
         const padX = 30; // Rand links/rechts
@@ -734,7 +795,11 @@
 
     // Event Listener für alle Inputs ausführen
     document.querySelectorAll('input, select').forEach(input => {
-        input.addEventListener('input', calculate);
+        input.addEventListener('input', (e) => {
+            // Setze das akzeptierte Risiko zurück, sobald sich ein Wert ändert
+            acceptedSmallRadius = false;
+            calculate();
+        });
     });
 
     // Initiale Berechnung

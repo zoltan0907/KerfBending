@@ -210,6 +210,7 @@
         @media (max-width: 800px) {
             body {
                 padding: 1rem;
+                font-size: 1.1rem; /* Etwas größere Grundschrift */
             }
             .container {
                 grid-template-columns: 1fr;
@@ -223,6 +224,39 @@
             }
             .svg-container {
                 display: none !important;
+            }
+            
+            /* Spezifische Vergrößerungen für bessere Lesbarkeit und Touch-Bedienung auf dem Smartphone */
+            h2 { font-size: 1.7rem; }
+            .section-title { font-size: 1.3rem; }
+            
+            label {
+                font-size: 1.05rem;
+                margin-bottom: 0.4rem;
+            }
+            input[type="number"], select {
+                font-size: 1.15rem;
+                padding: 0.8rem;
+            }
+            .btn-print {
+                font-size: 1.2rem;
+                padding: 1rem;
+            }
+            .result-value {
+                font-size: 1.8rem;
+            }
+            .result-label {
+                font-size: 0.85rem;
+            }
+            .lang-switch button {
+                font-size: 1.1rem;
+                padding: 0.75rem;
+            }
+            #radius-warning h4 {
+                font-size: 1.3rem;
+            }
+            #radius-warning p {
+                font-size: 1.1rem;
             }
         }
     </style>

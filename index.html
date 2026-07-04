@@ -204,29 +204,25 @@
 
             .svg-container { border: none; padding: 0; margin: 0; overflow: visible; display: block !important; }
             svg { max-width: 100% !important; height: auto !important; }
-            .mobile-placeholder { display: none !important; }
-        }
-
-        .mobile-placeholder {
-            display: none;
         }
 
         /* Responsives Design für mobile Geräte (PWA) */
         @media (max-width: 800px) {
+            body {
+                padding: 1rem;
+            }
             .container {
                 grid-template-columns: 1fr;
             }
-            .svg-container {
-                display: none;
+            .results-grid {
+                /* Bricht die 4 Spalten in 2 Spalten x 2 Zeilen um, damit nichts mehr übersteht */
+                grid-template-columns: 1fr 1fr;
             }
-            .mobile-placeholder {
-                display: block;
-                padding: 1.5rem;
-                text-align: center;
-                color: #64748b;
-                background: #f1f5f9;
-                border-radius: 0.5rem;
-                border: 1px dashed #cbd5e1;
+            .hide-on-mobile {
+                display: none !important;
+            }
+            .svg-container {
+                display: none !important;
             }
         }
     </style>
@@ -293,7 +289,7 @@
         <!-- Fehler und Warnungen direkt über dem Druck-Button platzieren! -->
         <div id="error-msg" class="alert alert-error"></div>
 
-        <!-- Neuer Warnungs-Block für zu kleine Radien (Ausrissgefahr) -->
+        <!-- Warnungs-Block für zu kleine Radien -->
         <div id="radius-warning" class="alert no-print" style="background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; display: none; margin-bottom: 1.5rem;">
             <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.1rem;" data-i18n="warnRadiusTitle">Biegeradius extrem klein!</h4>
             <p id="warn-text" style="margin-top: 0; margin-bottom: 1rem;"></p>
@@ -330,7 +326,8 @@
             </div>
         </div>
 
-        <h2 class="no-print" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
+        <!-- Wird auf Smartphones komplett ausgeblendet (.hide-on-mobile) -->
+        <h2 class="no-print hide-on-mobile" data-i18n="resTitle">Abwicklung & Schnittplan</h2>
         
         <div class="results-grid no-print">
             <div class="result-item highlight">
@@ -351,10 +348,7 @@
             </div>
         </div>
 
-        <div class="mobile-placeholder no-print" id="mobile-placeholder">
-            <p style="margin: 0;" data-i18n="mobileSketchMsg">Die Skizze wird auf kleinen Bildschirmen ausgeblendet. Nutze die Druckfunktion, um sie zu sehen.</p>
-        </div>
-
+        <!-- Die Grafik verschwindet nun auf Handys ohne Rückstand -->
         <div class="svg-container" id="svg-container">
             <!-- SVG Skizze -->
         </div>
@@ -388,8 +382,7 @@
             svgTop: "Draufsicht (Innenseite mit Schnitten)", svgCorner: "Ecke", svgTotal: "Gesamtlänge Holzbrett",
             svgSide: "Seitenansicht (Schnitt-Tiefe)", svgMount: "Montierter Zustand (Außenmaße)",
             svgWidth: "Breite", svgHeight: "Höhe", svgSideLen: "Seitenlänge S", svgRad: "Radius R", svgAngle: "Winkel = {0}° pro Ecke",
-            printSettings: "Parameter & Einstellungen", printShape: "Form", printDim: "Außenmaße", printRadius: "Radius (R)", printThick: "Holzstärke (t)", printBlade: "Sägeblatt (w)", printWeb: "Steg (v)", printResults: "Schnitt-Ergebnisse",
-            mobileSketchMsg: "Die Skizze wird auf kleinen Bildschirmen ausgeblendet. Nutze die Druckfunktion oder ein größeres Gerät, um sie zu sehen."
+            printSettings: "Parameter & Einstellungen", printShape: "Form", printDim: "Außenmaße", printRadius: "Radius (R)", printThick: "Holzstärke (t)", printBlade: "Sägeblatt (w)", printWeb: "Steg (v)", printResults: "Schnitt-Ergebnisse"
         },
         en: {
             configTitle: "Polygon Configurator", shapeLabel: "Number of corners / Shape",
@@ -416,8 +409,7 @@
             svgTop: "Top View (Inside with cuts)", svgCorner: "Corner", svgTotal: "Total Board Length",
             svgSide: "Side View (Cut depth)", svgMount: "Assembled State (Outer dimensions)",
             svgWidth: "Width", svgHeight: "Height", svgSideLen: "Side length S", svgRad: "Radius R", svgAngle: "Angle = {0}° per corner",
-            printSettings: "Parameters & Settings", printShape: "Shape", printDim: "Outer Dimensions", printRadius: "Radius (R)", printThick: "Wood Thickness (t)", printBlade: "Blade Width (w)", printWeb: "Web (v)", printResults: "Cutting Results",
-            mobileSketchMsg: "The sketch is hidden on small screens. Use the print function or a larger device to view it."
+            printSettings: "Parameters & Settings", printShape: "Shape", printDim: "Outer Dimensions", printRadius: "Radius (R)", printThick: "Wood Thickness (t)", printBlade: "Blade Width (w)", printWeb: "Web (v)", printResults: "Cutting Results"
         }
     };
 
